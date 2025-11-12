@@ -122,7 +122,16 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      const activities = jsonData.map((row: any) => {
+      // Valid tipo values
+      const validTipos = ['Plantão', 'Ambulatório', 'Enfermaria'];
+
+      const activities = jsonData.map((row: any, index: number) => {
+        // Normalize tipo - trim and check if valid
+        const tipoNormalized = String(row.tipo || '').trim();
+        if (!validTipos.includes(tipoNormalized)) {
+          throw new Error(`Linha ${index + 2}: Tipo "${row.tipo}" inválido. Valores aceitos: Plantão, Ambulatório, Enfermaria`);
+        }
+
         // Handle different date formats (Excel can return dates as numbers or strings)
         let dataFormatted: string;
         
@@ -132,14 +141,17 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
           dataFormatted = `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
         } else if (typeof row.data === 'string') {
           // DD/MM/YYYY format
-          const [day, month, year] = row.data.split('/');
+          const [day, month, year] = row.data.trim().split('/');
+          if (!day || !month || !year) {
+            throw new Error(`Linha ${index + 2}: Formato de data inválido. Use DD/MM/AAAA (ex: 25/12/2024)`);
+          }
           dataFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
         } else {
-          throw new Error(`Formato de data inválido na linha com tipo "${row.tipo}"`);
+          throw new Error(`Linha ${index + 2}: Formato de data inválido na linha com tipo "${row.tipo}"`);
         }
 
         // Handle time formats (Excel can return times as decimal numbers)
-        const formatTime = (timeValue: any): string => {
+        const formatTime = (timeValue: any, fieldName: string): string => {
           if (typeof timeValue === 'number') {
             // Excel time as fraction of day (0.5 = 12:00)
             const totalMinutes = Math.round(timeValue * 24 * 60);
@@ -147,18 +159,34 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
             const minutes = totalMinutes % 60;
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
           }
-          return timeValue; // Already a string in HH:MM format
+          const timeStr = String(timeValue || '').trim();
+          if (!timeStr || !timeStr.match(/^\d{1,2}:\d{2}$/)) {
+            throw new Error(`Linha ${index + 2}: Formato de ${fieldName} inválido. Use HH:MM (ex: 08:00)`);
+          }
+          return timeStr;
         };
 
+        // Validate vagas_total
+        const vagasTotal = parseInt(row.vagas_total);
+        if (isNaN(vagasTotal) || vagasTotal < 1) {
+          throw new Error(`Linha ${index + 2}: vagas_total deve ser um número maior que 0`);
+        }
+
+        // Validate escala_id
+        const escalaId = String(row.escala_id || '').trim();
+        if (!escalaId) {
+          throw new Error(`Linha ${index + 2}: escala_id é obrigatório. Copie o ID da aba "Escalas Disponíveis"`);
+        }
+
         return {
-          escala_id: row.escala_id,
-          tipo: row.tipo,
-          local: row.local || null,
+          escala_id: escalaId,
+          tipo: tipoNormalized,
+          local: row.local ? String(row.local).trim() : null,
           data: dataFormatted,
-          horario_inicio: formatTime(row.horario_inicio),
-          horario_fim: formatTime(row.horario_fim),
-          vagas_total: parseInt(row.vagas_total),
-          observacao: row.observacao || null,
+          horario_inicio: formatTime(row.horario_inicio, 'horário de início'),
+          horario_fim: formatTime(row.horario_fim, 'horário de fim'),
+          vagas_total: vagasTotal,
+          observacao: row.observacao ? String(row.observacao).trim() : null,
           vagas_ocupadas: 0
         };
       });
