@@ -11,6 +11,7 @@ import { PromoteAdminButton } from "@/components/PromoteAdminButton";
 import { ActivitySelection } from "@/components/participant/ActivitySelection";
 import { ParticipacaoEscala } from "@/components/participant/ParticipacaoEscala";
 import { VezAtual } from "@/components/participant/VezAtual";
+import { RodadaStatus } from "@/components/participant/RodadaStatus";
 
 const Index = () => {
   const [user, setUser] = useState<any>(null);
@@ -154,7 +155,14 @@ const Index = () => {
 
           <TabsContent value="escolher" className="space-y-4">
             <VezAtual />
-            {user && <ActivitySelection userId={user.id} />}
+            <div className="grid gap-6 md:grid-cols-2">
+              <div>
+                <RodadaStatus />
+              </div>
+              <div>
+                {user && <ActivitySelection userId={user.id} />}
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="minhas" className="space-y-4">
