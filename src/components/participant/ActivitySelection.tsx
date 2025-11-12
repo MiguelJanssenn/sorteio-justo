@@ -12,6 +12,12 @@ interface ActivitySelectionProps {
   userId: string;
 }
 
+interface AvancarRodadaResult {
+  sucesso: boolean;
+  rodada_finalizada: boolean;
+  proximo_indice: number;
+}
+
 export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   const [rodadaAtual, setRodadaAtual] = useState<any>(null);
   const [atividades, setAtividades] = useState<any[]>([]);
@@ -183,28 +189,22 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
 
       console.log('Escolha registrada com sucesso');
 
-      // Avançar para próximo participante
-      const proximoIndice = rodadaAtual.indice_atual + 1;
-      const finalizada = proximoIndice >= rodadaAtual.ordem_sorteada.length;
-
-      console.log('Atualizando rodada - índice atual:', rodadaAtual.indice_atual, '-> próximo:', proximoIndice, 'finalizada:', finalizada);
-
-      const { error: rodadaError } = await supabase
-        .from("rodadas")
-        .update({
-          indice_atual: proximoIndice,
-          finalizada
-        })
-        .eq("id", rodadaAtual.id);
+      // Avançar para próximo participante usando função do banco
+      const { data: resultado, error: rodadaError } = await supabase.rpc(
+        'avancar_rodada',
+        { rodada_id_param: rodadaAtual.id }
+      );
 
       if (rodadaError) {
-        console.error('Erro ao atualizar rodada:', rodadaError);
+        console.error('Erro ao avançar rodada:', rodadaError);
         throw rodadaError;
       }
 
-      console.log('Rodada atualizada com sucesso');
+      console.log('Rodada atualizada com sucesso:', resultado);
 
-      if (finalizada) {
+      const resultadoTipado = resultado as unknown as AvancarRodadaResult;
+
+      if (resultadoTipado.rodada_finalizada) {
         toast({
           title: "Escolha registrada!",
           description: "Rodada finalizada! A próxima rodada será criada automaticamente.",

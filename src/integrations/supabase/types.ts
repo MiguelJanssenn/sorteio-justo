@@ -388,6 +388,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      avancar_rodada: { Args: { rodada_id_param: string }; Returns: Json }
       email_autorizado: { Args: { email_check: string }; Returns: boolean }
       excluir_rodadas_escala: {
         Args: { escala_id_param: string }
