@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { LogOut, ArrowLeft } from "lucide-react";
 import { ScaleForm } from "@/components/admin/ScaleForm";
-import { ActivityForm } from "@/components/admin/ActivityForm";
 import { BulkActivityImport } from "@/components/admin/BulkActivityImport";
 import { RoundManager } from "@/components/admin/RoundManager";
 import { RulesConfig } from "@/components/admin/RulesConfig";
@@ -105,10 +104,7 @@ const Admin = () => {
             <ScaleForm onSuccess={handleRefresh} />
           </TabsContent>
 
-          <TabsContent value="atividades" key={`atividades-${refreshKey}`} className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <ActivityForm onSuccess={handleRefresh} />
-            </div>
+          <TabsContent value="atividades" key={`atividades-${refreshKey}`}>
             <BulkActivityImport onSuccess={handleRefresh} />
           </TabsContent>
 
