@@ -56,12 +56,14 @@ interface Troca {
     data: string;
     horario_inicio: string;
     horario_fim: string;
+    local: string | null;
   };
   atividade_destino: {
     tipo: string;
     data: string;
     horario_inicio: string;
     horario_fim: string;
+    local: string | null;
   };
 }
 
@@ -86,15 +88,31 @@ const TrocaRow = ({ troca, onResponder, getStatusBadge }: {
     <TableRow>
       <TableCell>{troca.solicitante.nome_completo}</TableCell>
       <TableCell>
-        <div className="text-sm">
+        <div className="text-sm space-y-1">
           <Badge variant="outline" className="mb-1">{troca.atividade_origem.tipo}</Badge>
           <div>{format(new Date(troca.atividade_origem.data), "dd/MM/yyyy", { locale: ptBR })}</div>
+          <div className="flex items-center gap-1 text-xs">
+            {troca.atividade_origem.horario_inicio} - {troca.atividade_origem.horario_fim}
+          </div>
+          {troca.atividade_origem.local && (
+            <div className="flex items-center gap-1 text-xs font-semibold text-primary">
+              📍 {troca.atividade_origem.local}
+            </div>
+          )}
         </div>
       </TableCell>
       <TableCell>
-        <div className="text-sm">
+        <div className="text-sm space-y-1">
           <Badge variant="outline" className="mb-1">{troca.atividade_destino.tipo}</Badge>
           <div>{format(new Date(troca.atividade_destino.data), "dd/MM/yyyy", { locale: ptBR })}</div>
+          <div className="flex items-center gap-1 text-xs">
+            {troca.atividade_destino.horario_inicio} - {troca.atividade_destino.horario_fim}
+          </div>
+          {troca.atividade_destino.local && (
+            <div className="flex items-center gap-1 text-xs font-semibold text-primary">
+              📍 {troca.atividade_destino.local}
+            </div>
+          )}
         </div>
       </TableCell>
       <TableCell>{getStatusBadge(troca.status)}</TableCell>
@@ -193,13 +211,15 @@ export const SistemaTrocas = () => {
             tipo,
             data,
             horario_inicio,
-            horario_fim
+            horario_fim,
+            local
           ),
           atividade_destino:atividades!trocas_atividade_destino_id_fkey (
             tipo,
             data,
             horario_inicio,
-            horario_fim
+            horario_fim,
+            local
           )
         `)
         .or(`solicitante_id.eq.${session.user.id},receptor_id.eq.${session.user.id}`)
@@ -231,7 +251,8 @@ export const SistemaTrocas = () => {
           tipo,
           data,
           horario_inicio,
-          horario_fim
+          horario_fim,
+          local
         )
       `)
       .eq("atividades.tipo", tipoAtividade)
@@ -404,6 +425,7 @@ export const SistemaTrocas = () => {
                     {minhasEscolhas.map((escolha) => (
                       <SelectItem key={escolha.atividade_id} value={escolha.atividade_id}>
                         {escolha.atividades.tipo} - {format(new Date(escolha.atividades.data), "dd/MM/yyyy", { locale: ptBR })}
+                        {escolha.atividades.local && ` - 📍 ${escolha.atividades.local}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -450,6 +472,7 @@ export const SistemaTrocas = () => {
                             .map((p) => (
                               <SelectItem key={p.atividade_id} value={p.atividade_id}>
                                 {p.atividades.tipo} - {format(new Date(p.atividades.data), "dd/MM/yyyy", { locale: ptBR })}
+                                {p.atividades.local && ` - 📍 ${p.atividades.local}`}
                               </SelectItem>
                             ))}
                         </SelectContent>

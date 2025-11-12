@@ -31,6 +31,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   const [escolhasPorAtividade, setEscolhasPorAtividade] = useState<Record<string, any[]>>({});
   const [ordemTipos, setOrdemTipos] = useState<string[] | null>(null);
   const [ocultarEscolhidas, setOcultarEscolhidas] = useState(true);
+  const [rodadasPausadas, setRodadasPausadas] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -86,10 +87,12 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
 
     if (!rodada) {
       setRodadaAtual(null);
+      setRodadasPausadas(false);
       return;
     }
 
     setRodadaAtual(rodada);
+    setRodadasPausadas(rodada.escalas?.rodadas_pausadas || false);
 
     // Buscar regra de ordem por tipo
     const { data: regraOrdem } = await supabase
@@ -381,7 +384,19 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
         </CardContent>
       </Card>
 
-      {jaEscolheu && (
+      {rodadasPausadas && (
+        <Card className="bg-yellow-500/10 border-yellow-500/50">
+          <CardContent className="py-8 text-center">
+            <div className="w-12 h-12 mx-auto mb-3 text-yellow-600 dark:text-yellow-400 text-3xl">⏸️</div>
+            <p className="font-semibold text-lg">Rodadas Pausadas</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              O administrador pausou as rodadas. Aguarde a liberação para continuar.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!rodadasPausadas && jaEscolheu && (
         <Card className="bg-muted">
           <CardContent className="py-8 text-center">
             <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-primary" />
@@ -406,7 +421,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
             </Label>
           </div>
           
-          {minhaVez && !jaEscolheu && atividadeSelecionada && (
+          {minhaVez && !jaEscolheu && !rodadasPausadas && atividadeSelecionada && (
             <div className="flex gap-2">
               <Button
                 onClick={() => setAtividadeSelecionada(null)}
@@ -428,11 +443,11 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
           )}
         </div>
         
-        {minhaVez && !jaEscolheu && (
+        {minhaVez && !jaEscolheu && !rodadasPausadas && (
           <h3 className="font-semibold">Escolha uma atividade:</h3>
         )}
 
-        {!minhaVez && !jaEscolheu && (
+        {!minhaVez && !jaEscolheu && !rodadasPausadas && (
           <div className="text-sm text-muted-foreground text-center py-2">
             Visualizando atividades disponíveis
           </div>
@@ -449,7 +464,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
             const escolhasDestaAtividade = escolhasPorAtividade[atividade.id] || [];
             const jaEscolhiEstaAtividade = escolhasDestaAtividade.some((e: any) => e.user_id === userId);
             const temEscolhas = escolhasDestaAtividade.length > 0;
-            const podeSelecionar = minhaVez && !jaEscolheu && vagasDisponiveis && !jaEscolhiEstaAtividade;
+            const podeSelecionar = minhaVez && !jaEscolheu && !rodadasPausadas && vagasDisponiveis && !jaEscolhiEstaAtividade;
             
             return (
               <Card 
@@ -509,7 +524,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
                             {atividade.horario_inicio}-{atividade.horario_fim}
                           </div>
                           {atividade.local && (
-                            <div className="flex items-center gap-1 text-muted-foreground">
+                            <div className="flex items-center gap-1 font-semibold text-primary">
                               📍 {atividade.local}
                             </div>
                           )}
