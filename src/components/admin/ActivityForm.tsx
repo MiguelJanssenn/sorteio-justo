@@ -90,7 +90,7 @@ export const ActivityForm = ({ onSuccess }: { onSuccess: () => void }) => {
           Cadastrar Atividade
         </CardTitle>
         <CardDescription>
-          Adicione plantões, ambulatórios ou enfermarias à escala
+          Adicione plantões, ambulatórios, enfermarias ou blocos à escala
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -121,6 +121,7 @@ export const ActivityForm = ({ onSuccess }: { onSuccess: () => void }) => {
                 <SelectItem value="Plantão">Plantão</SelectItem>
                 <SelectItem value="Ambulatório">Ambulatório</SelectItem>
                 <SelectItem value="Enfermaria">Enfermaria</SelectItem>
+                <SelectItem value="Bloco">Bloco</SelectItem>
               </SelectContent>
             </Select>
           </div>

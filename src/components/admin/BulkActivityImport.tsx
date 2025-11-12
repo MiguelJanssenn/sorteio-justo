@@ -123,13 +123,13 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
       // Valid tipo values
-      const validTipos = ['Plantão', 'Ambulatório', 'Enfermaria'];
+      const validTipos = ['Plantão', 'Ambulatório', 'Enfermaria', 'Bloco'];
 
       const activities = jsonData.map((row: any, index: number) => {
         // Normalize tipo - trim and check if valid
         const tipoNormalized = String(row.tipo || '').trim();
         if (!validTipos.includes(tipoNormalized)) {
-          throw new Error(`Linha ${index + 2}: Tipo "${row.tipo}" inválido. Valores aceitos: Plantão, Ambulatório, Enfermaria`);
+          throw new Error(`Linha ${index + 2}: Tipo "${row.tipo}" inválido. Valores aceitos: Plantão, Ambulatório, Enfermaria, Bloco`);
         }
 
         // Handle different date formats (Excel can return dates as numbers or strings)
