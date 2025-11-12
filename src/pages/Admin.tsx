@@ -9,6 +9,7 @@ import { ScaleForm } from "@/components/admin/ScaleForm";
 import { BulkActivityImport } from "@/components/admin/BulkActivityImport";
 import { RoundManager } from "@/components/admin/RoundManager";
 import { RulesConfig } from "@/components/admin/RulesConfig";
+import { ScaleView } from "@/components/admin/ScaleView";
 
 const Admin = () => {
   const [loading, setLoading] = useState(true);
@@ -93,11 +94,12 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="escalas" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="escalas">Escalas</TabsTrigger>
             <TabsTrigger value="atividades">Atividades</TabsTrigger>
             <TabsTrigger value="rodadas">Rodadas</TabsTrigger>
             <TabsTrigger value="regras">Regras</TabsTrigger>
+            <TabsTrigger value="visualizar">Visualizar</TabsTrigger>
           </TabsList>
 
           <TabsContent value="escalas" key={`escalas-${refreshKey}`}>
@@ -114,6 +116,10 @@ const Admin = () => {
 
           <TabsContent value="regras" key={`regras-${refreshKey}`}>
             <RulesConfig />
+          </TabsContent>
+
+          <TabsContent value="visualizar" key={`visualizar-${refreshKey}`}>
+            <ScaleView />
           </TabsContent>
         </Tabs>
       </main>
