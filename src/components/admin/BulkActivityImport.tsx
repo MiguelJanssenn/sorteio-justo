@@ -138,13 +138,25 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
           throw new Error(`Formato de data inválido na linha com tipo "${row.tipo}"`);
         }
 
+        // Handle time formats (Excel can return times as decimal numbers)
+        const formatTime = (timeValue: any): string => {
+          if (typeof timeValue === 'number') {
+            // Excel time as fraction of day (0.5 = 12:00)
+            const totalMinutes = Math.round(timeValue * 24 * 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+          }
+          return timeValue; // Already a string in HH:MM format
+        };
+
         return {
           escala_id: row.escala_id,
           tipo: row.tipo,
           local: row.local || null,
           data: dataFormatted,
-          horario_inicio: row.horario_inicio,
-          horario_fim: row.horario_fim,
+          horario_inicio: formatTime(row.horario_inicio),
+          horario_fim: formatTime(row.horario_fim),
           vagas_total: parseInt(row.vagas_total),
           observacao: row.observacao || null,
           vagas_ocupadas: 0
