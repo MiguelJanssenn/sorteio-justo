@@ -265,7 +265,39 @@ export const RoundManager = () => {
 
       const rodadaIds = todasRodadas.map(r => r.id);
 
-      // Excluir todas as escolhas dessas rodadas primeiro
+      // Buscar todas as escolhas para contar quantas por atividade
+      const { data: todasEscolhas } = await supabase
+        .from("escolhas")
+        .select("atividade_id")
+        .in("rodada_id", rodadaIds);
+
+      // Contar escolhas por atividade
+      const contagemPorAtividade: Record<string, number> = {};
+      if (todasEscolhas) {
+        todasEscolhas.forEach(escolha => {
+          contagemPorAtividade[escolha.atividade_id] = 
+            (contagemPorAtividade[escolha.atividade_id] || 0) + 1;
+        });
+      }
+
+      // Primeiro, ajustar manualmente as vagas_ocupadas para evitar constraint violation
+      for (const [atividadeId, quantidade] of Object.entries(contagemPorAtividade)) {
+        const { data: atividade } = await supabase
+          .from("atividades")
+          .select("vagas_ocupadas")
+          .eq("id", atividadeId)
+          .single();
+
+        if (atividade) {
+          const novasVagas = Math.max(0, (atividade.vagas_ocupadas || 0) - quantidade);
+          await supabase
+            .from("atividades")
+            .update({ vagas_ocupadas: novasVagas })
+            .eq("id", atividadeId);
+        }
+      }
+
+      // Agora excluir todas as escolhas (o trigger não será acionado pois já ajustamos)
       const { error: escolhasError } = await supabase
         .from("escolhas")
         .delete()
