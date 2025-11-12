@@ -125,82 +125,106 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       // Valid tipo values
       const validTipos = ['Plantão', 'Ambulatório', 'Enfermaria', 'Bloco'];
 
-      const activities = jsonData.map((row: any, index: number) => {
-        // Normalize tipo - trim and check if valid
-        const tipoNormalized = String(row.tipo || '').trim();
-        if (!validTipos.includes(tipoNormalized)) {
-          throw new Error(`Linha ${index + 2}: Tipo "${row.tipo}" inválido. Valores aceitos: Plantão, Ambulatório, Enfermaria, Bloco`);
-        }
+      const validActivities: any[] = [];
+      const errors: string[] = [];
 
-        // Handle different date formats (Excel can return dates as numbers or strings)
-        let dataFormatted: string;
-        
-        if (typeof row.data === 'number') {
-          // Excel date serial number
-          const date = XLSX.SSF.parse_date_code(row.data);
-          dataFormatted = `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
-        } else if (typeof row.data === 'string') {
-          // DD/MM/YYYY format
-          const [day, month, year] = row.data.trim().split('/');
-          if (!day || !month || !year) {
-            throw new Error(`Linha ${index + 2}: Formato de data inválido. Use DD/MM/AAAA (ex: 25/12/2024)`);
+      jsonData.forEach((row: any, index: number) => {
+        try {
+          // Normalize tipo - trim and check if valid
+          const tipoNormalized = String(row.tipo || '').trim();
+          if (!validTipos.includes(tipoNormalized)) {
+            throw new Error(`Tipo "${row.tipo}" inválido. Valores aceitos: Plantão, Ambulatório, Enfermaria, Bloco`);
           }
-          dataFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-        } else {
-          throw new Error(`Linha ${index + 2}: Formato de data inválido na linha com tipo "${row.tipo}"`);
-        }
 
-        // Handle time formats (Excel can return times as decimal numbers)
-        const formatTime = (timeValue: any, fieldName: string): string => {
-          if (typeof timeValue === 'number') {
-            // Excel time as fraction of day (0.5 = 12:00)
-            const totalMinutes = Math.round(timeValue * 24 * 60);
-            const hours = Math.floor(totalMinutes / 60);
-            const minutes = totalMinutes % 60;
-            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+          // Handle different date formats (Excel can return dates as numbers or strings)
+          let dataFormatted: string;
+          
+          if (typeof row.data === 'number') {
+            // Excel date serial number
+            const date = XLSX.SSF.parse_date_code(row.data);
+            dataFormatted = `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
+          } else if (typeof row.data === 'string') {
+            // DD/MM/YYYY format
+            const [day, month, year] = row.data.trim().split('/');
+            if (!day || !month || !year) {
+              throw new Error(`Formato de data inválido. Use DD/MM/AAAA (ex: 25/12/2024)`);
+            }
+            dataFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+          } else {
+            throw new Error(`Formato de data inválido`);
           }
-          const timeStr = String(timeValue || '').trim();
-          if (!timeStr || !timeStr.match(/^\d{1,2}:\d{2}$/)) {
-            throw new Error(`Linha ${index + 2}: Formato de ${fieldName} inválido. Use HH:MM (ex: 08:00)`);
+
+          // Handle time formats (Excel can return times as decimal numbers)
+          const formatTime = (timeValue: any, fieldName: string): string => {
+            if (typeof timeValue === 'number') {
+              // Excel time as fraction of day (0.5 = 12:00)
+              const totalMinutes = Math.round(timeValue * 24 * 60);
+              const hours = Math.floor(totalMinutes / 60);
+              const minutes = totalMinutes % 60;
+              return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            }
+            const timeStr = String(timeValue || '').trim();
+            if (!timeStr || !timeStr.match(/^\d{1,2}:\d{2}$/)) {
+              throw new Error(`Formato de ${fieldName} inválido. Use HH:MM (ex: 08:00)`);
+            }
+            return timeStr;
+          };
+
+          // Validate vagas_total
+          const vagasTotal = parseInt(row.vagas_total);
+          if (isNaN(vagasTotal) || vagasTotal < 1) {
+            throw new Error(`vagas_total deve ser um número maior que 0`);
           }
-          return timeStr;
-        };
 
-        // Validate vagas_total
-        const vagasTotal = parseInt(row.vagas_total);
-        if (isNaN(vagasTotal) || vagasTotal < 1) {
-          throw new Error(`Linha ${index + 2}: vagas_total deve ser um número maior que 0`);
+          // Validate escala_id
+          const escalaId = String(row.escala_id || '').trim();
+          if (!escalaId) {
+            throw new Error(`escala_id é obrigatório. Copie o ID da aba "Escalas Disponíveis"`);
+          }
+
+          validActivities.push({
+            escala_id: escalaId,
+            tipo: tipoNormalized,
+            local: row.local ? String(row.local).trim() : null,
+            data: dataFormatted,
+            horario_inicio: formatTime(row.horario_inicio, 'horário de início'),
+            horario_fim: formatTime(row.horario_fim, 'horário de fim'),
+            vagas_total: vagasTotal,
+            observacao: row.observacao ? String(row.observacao).trim() : null,
+            vagas_ocupadas: 0
+          });
+        } catch (error: any) {
+          errors.push(`Linha ${index + 2}: ${error.message}`);
         }
-
-        // Validate escala_id
-        const escalaId = String(row.escala_id || '').trim();
-        if (!escalaId) {
-          throw new Error(`Linha ${index + 2}: escala_id é obrigatório. Copie o ID da aba "Escalas Disponíveis"`);
-        }
-
-        return {
-          escala_id: escalaId,
-          tipo: tipoNormalized,
-          local: row.local ? String(row.local).trim() : null,
-          data: dataFormatted,
-          horario_inicio: formatTime(row.horario_inicio, 'horário de início'),
-          horario_fim: formatTime(row.horario_fim, 'horário de fim'),
-          vagas_total: vagasTotal,
-          observacao: row.observacao ? String(row.observacao).trim() : null,
-          vagas_ocupadas: 0
-        };
       });
 
-      const { error } = await supabase.from("atividades").insert(activities);
+      if (validActivities.length > 0) {
+        const { error } = await supabase.from("atividades").insert(validActivities);
+        if (error) throw error;
+      }
 
-      if (error) throw error;
+      if (validActivities.length > 0 && errors.length === 0) {
+        toast({
+          title: "Atividades importadas!",
+          description: `${validActivities.length} atividade(s) importada(s) com sucesso.`,
+        });
+      } else if (validActivities.length > 0 && errors.length > 0) {
+        toast({
+          title: "Importação parcial",
+          description: `${validActivities.length} importadas com sucesso. ${errors.length} com erro(s). Corrija manualmente: ${errors.join('; ')}`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Nenhuma atividade importada",
+          description: `Todas as linhas têm erros: ${errors.join('; ')}`,
+          variant: "destructive",
+        });
+      }
 
-      toast({
-        title: "Atividades importadas!",
-        description: `${activities.length} atividade(s) importada(s) com sucesso.`,
-      });
-
-      onSuccess();
+      if (validActivities.length > 0) {
+        onSuccess();
+      }
       e.target.value = "";
     } catch (error: any) {
       toast({
