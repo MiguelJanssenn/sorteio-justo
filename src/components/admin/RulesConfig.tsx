@@ -56,9 +56,9 @@ export const RulesConfig = () => {
       
       // Carregar configurações existentes
       data.forEach(regra => {
-        if (regra.tipo_regra === "fim_semana_obrigatorio") {
+        if (regra.tipo_regra === "obrigatorio_fim_semana") {
           setFimSemanaObrigatorio(regra.ativa);
-        } else if (regra.tipo_regra === "quota_atividades") {
+        } else if (regra.tipo_regra === "cota_atividades") {
           setQuotaAtividades(regra.ativa);
           const config = regra.configuracao as any;
           setMinAtividades(config?.min?.toString() || "0");
@@ -88,13 +88,13 @@ export const RulesConfig = () => {
       const novasRegras = [
         {
           escala_id: escalaId,
-          tipo_regra: "fim_semana_obrigatorio",
+          tipo_regra: "obrigatorio_fim_semana",
           ativa: fimSemanaObrigatorio,
           configuracao: {}
         },
         {
           escala_id: escalaId,
-          tipo_regra: "quota_atividades",
+          tipo_regra: "cota_atividades",
           ativa: quotaAtividades,
           configuracao: {
             min: parseInt(minAtividades),
