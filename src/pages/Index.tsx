@@ -9,6 +9,7 @@ import { Calendar, ClipboardList, RefreshCw, LogOut, Settings } from "lucide-rea
 import { useToast } from "@/hooks/use-toast";
 import { PromoteAdminButton } from "@/components/PromoteAdminButton";
 import { ActivitySelection } from "@/components/participant/ActivitySelection";
+import { ParticipacaoEscala } from "@/components/participant/ParticipacaoEscala";
 
 const Index = () => {
   const [user, setUser] = useState<any>(null);
@@ -137,12 +138,17 @@ const Index = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="escolher" className="space-y-4">
+        <Tabs defaultValue="participacao" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="participacao">Participação</TabsTrigger>
             <TabsTrigger value="escolher">Escolher Atividades</TabsTrigger>
             <TabsTrigger value="minhas">Minhas Escolhas</TabsTrigger>
             <TabsTrigger value="trocas">Trocas</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="participacao" className="space-y-4">
+            <ParticipacaoEscala />
+          </TabsContent>
 
           <TabsContent value="escolher" className="space-y-4">
             {user && <ActivitySelection userId={user.id} />}

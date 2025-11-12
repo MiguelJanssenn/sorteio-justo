@@ -25,6 +25,7 @@ export const RoundManager = () => {
   useEffect(() => {
     if (escalaId) {
       fetchRodadaAtual();
+      fetchParticipantes();
     }
   }, [escalaId]);
 
@@ -39,20 +40,40 @@ export const RoundManager = () => {
   };
 
   const fetchParticipantes = async () => {
-    // Buscar apenas participantes (excluir admins)
-    const { data: participantesRoles } = await supabase
+    if (!escalaId) return;
+
+    // Buscar apenas participantes ativos nesta escala (excluir admins)
+    const { data: participantesAtivos } = await supabase
+      .from("participacao_escalas" as any)
+      .select("user_id")
+      .eq("escala_id", escalaId)
+      .eq("ativo", true);
+
+    if (!participantesAtivos || participantesAtivos.length === 0) {
+      setParticipantes([]);
+      return;
+    }
+
+    const participanteIds = participantesAtivos.map((p: any) => p.user_id);
+
+    // Verificar que são participantes (não admins)
+    const { data: roles } = await supabase
       .from("user_roles")
       .select("user_id")
-      .eq("role", "participante");
+      .eq("role", "participante")
+      .in("user_id", participanteIds);
 
-    if (!participantesRoles) return;
+    if (!roles || roles.length === 0) {
+      setParticipantes([]);
+      return;
+    }
 
-    const participanteIds = participantesRoles.map(r => r.user_id);
+    const participanteValidoIds = roles.map(r => r.user_id);
 
     const { data } = await supabase
       .from("profiles")
       .select("id, nome_completo")
-      .in("id", participanteIds)
+      .in("id", participanteValidoIds)
       .order("nome_completo");
     
     if (data) setParticipantes(data);
@@ -78,6 +99,16 @@ export const RoundManager = () => {
 
   const iniciarNovaRodada = async () => {
     if (!escalaId) return;
+
+    if (participantes.length === 0) {
+      toast({
+        title: "Nenhum participante ativo",
+        description: "Não há participantes ativos para esta escala. Peça aos usuários para marcarem participação.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -88,7 +119,7 @@ export const RoundManager = () => {
         .eq("escala_id", escalaId)
         .order("numero", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       const proximoNumero = ultimaRodada ? ultimaRodada.numero + 1 : 1;
       const ordemSorteada = sortearOrdem();
