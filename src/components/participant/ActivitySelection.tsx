@@ -359,12 +359,17 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
             const vagasDisponiveis = atividade.vagas_ocupadas < atividade.vagas_total;
             const escolhasDestaAtividade = escolhasPorAtividade[atividade.id] || [];
             const jaEscolhiEstaAtividade = escolhasDestaAtividade.some((e: any) => e.user_id === userId);
+            const temEscolhas = escolhasDestaAtividade.length > 0;
             const podeSelecionar = minhaVez && !jaEscolheu && vagasDisponiveis && !jaEscolhiEstaAtividade;
             
             return (
               <Card 
                 key={atividade.id} 
                 className={`transition-all ${
+                  temEscolhas 
+                    ? "bg-muted/50 opacity-75" 
+                    : ""
+                } ${
                   !vagasDisponiveis 
                     ? "opacity-50 cursor-not-allowed" 
                     : podeSelecionar 
@@ -373,7 +378,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
                 } ${
                   isSelecionada 
                     ? "border-primary border-2 bg-primary/5" 
-                    : podeSelecionar 
+                    : podeSelecionar && !temEscolhas
                       ? "hover:border-primary/50" 
                       : ""
                 }`}
@@ -435,12 +440,24 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
                     </div>
                     
                     {escolhasDestaAtividade.length > 0 && (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1 border-t">
-                        <CheckCircle2 className="w-3 h-3 text-primary" />
-                        <span>Escolhida por:</span>
-                        <span className="font-medium text-foreground">
-                          {escolhasDestaAtividade.map((e: any) => e.profiles?.nome_completo).join(", ")}
-                        </span>
+                      <div className="flex items-center gap-2 text-xs pt-2 border-t mt-2">
+                        <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                        <div className="flex flex-col gap-1">
+                          <span className="font-semibold text-foreground">
+                            Escolhida por:
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {escolhasDestaAtividade.map((e: any, idx: number) => (
+                              <Badge 
+                                key={idx}
+                                variant={e.user_id === userId ? "default" : "secondary"}
+                                className="text-xs"
+                              >
+                                {e.profiles?.nome_completo || "Participante"}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
