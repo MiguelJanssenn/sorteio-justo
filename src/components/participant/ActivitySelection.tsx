@@ -275,6 +275,27 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
 
       console.log('Escolha registrada com sucesso');
 
+      // Verificar se as rodadas estão pausadas antes de avançar
+      const { data: escala } = await supabase
+        .from("escalas")
+        .select("rodadas_pausadas")
+        .eq("id", rodadaAtual.escala_id)
+        .single();
+
+      if (escala?.rodadas_pausadas) {
+        toast({
+          title: "Escolha registrada!",
+          description: "As rodadas estão pausadas. O administrador precisa continuar as rodadas para avançar.",
+        });
+        setAtividadeSelecionada(null);
+        setJaEscolheu(true);
+        setTimeout(() => {
+          fetchRodadaAtual();
+        }, 500);
+        setLoading(false);
+        return;
+      }
+
       // Avançar para próximo participante usando função do banco
       const { data: resultado, error: rodadaError } = await supabase.rpc(
         'avancar_rodada',

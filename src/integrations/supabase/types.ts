@@ -96,6 +96,7 @@ export type Database = {
           nome: string
           periodo_fim: string
           periodo_inicio: string
+          rodadas_pausadas: boolean
           status: string
         }
         Insert: {
@@ -105,6 +106,7 @@ export type Database = {
           nome: string
           periodo_fim: string
           periodo_inicio: string
+          rodadas_pausadas?: boolean
           status?: string
         }
         Update: {
@@ -114,6 +116,7 @@ export type Database = {
           nome?: string
           periodo_fim?: string
           periodo_inicio?: string
+          rodadas_pausadas?: boolean
           status?: string
         }
         Relationships: [

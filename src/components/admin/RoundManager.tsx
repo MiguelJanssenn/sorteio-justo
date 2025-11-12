@@ -17,9 +17,8 @@ export const RoundManager = () => {
   const [loading, setLoading] = useState(false);
   const [deletingRodada, setDeletingRodada] = useState(false);
   const [deletingAllRodadas, setDeletingAllRodadas] = useState(false);
-  const [resettingVagas, setResettingVagas] = useState(false);
-  const [excluirEscolhas, setExcluirEscolhas] = useState(false);
   const [finalizandoEscolhas, setFinalizandoEscolhas] = useState(false);
+  const [escalaAtual, setEscalaAtual] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -31,6 +30,7 @@ export const RoundManager = () => {
     if (escalaId) {
       fetchRodadaAtual();
       fetchParticipantes();
+      fetchEscalaAtual();
     }
   }, [escalaId]);
 
@@ -42,6 +42,18 @@ export const RoundManager = () => {
       .order("created_at", { ascending: false });
     
     if (data) setEscalas(data);
+  };
+
+  const fetchEscalaAtual = async () => {
+    if (!escalaId) return;
+    
+    const { data } = await supabase
+      .from("escalas")
+      .select("*")
+      .eq("id", escalaId)
+      .single();
+    
+    if (data) setEscalaAtual(data);
   };
 
   const fetchParticipantes = async () => {
@@ -164,30 +176,31 @@ export const RoundManager = () => {
     }
   };
 
-  const finalizarRodada = async () => {
-    if (!rodadaAtual) return;
+  const togglePausarRodadas = async () => {
+    if (!escalaId || !escalaAtual) return;
     setLoading(true);
 
     try {
+      const novoPausado = !escalaAtual.rodadas_pausadas;
+      
       const { error } = await supabase
-        .from("rodadas")
-        .update({ finalizada: true })
-        .eq("id", rodadaAtual.id);
+        .from("escalas")
+        .update({ rodadas_pausadas: novoPausado })
+        .eq("id", escalaId);
 
       if (error) throw error;
 
       toast({
-        title: "Rodada finalizada!",
-        description: "A próxima rodada será criada automaticamente com novo sorteio.",
+        title: novoPausado ? "Rodadas pausadas!" : "Rodadas retomadas!",
+        description: novoPausado 
+          ? "As rodadas estão pausadas. Você pode fazer ajustes e permitir trocas antes de continuar." 
+          : "As rodadas foram retomadas e a progressão automática está ativa.",
       });
 
-      // A próxima rodada será criada automaticamente pelo trigger
-      setTimeout(() => {
-        fetchRodadaAtual();
-      }, 1000);
+      fetchEscalaAtual();
     } catch (error: any) {
       toast({
-        title: "Erro ao finalizar rodada",
+        title: "Erro ao alterar status das rodadas",
         description: error.message,
         variant: "destructive",
       });
@@ -287,45 +300,6 @@ export const RoundManager = () => {
     }
   };
 
-  const resetarVagasOcupadas = async () => {
-    if (!escalaId) return;
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.rpc('resetar_vagas_ocupadas', {
-        escala_id_param: escalaId,
-        excluir_escolhas: excluirEscolhas
-      });
-
-      if (error) throw error;
-
-      const resultado = data as { atividades_resetadas: number; escolhas_excluidas: number };
-
-      if (excluirEscolhas) {
-        toast({
-          title: "Vagas resetadas e escolhas removidas!",
-          description: `${resultado.atividades_resetadas} atividade(s) resetadas e ${resultado.escolhas_excluidas} escolha(s) removidas.`,
-        });
-      } else {
-        toast({
-          title: "Vagas resetadas!",
-          description: `${resultado.atividades_resetadas} atividade(s) tiveram suas vagas ocupadas resetadas para 0.`,
-        });
-      }
-
-      setResettingVagas(false);
-      setExcluirEscolhas(false);
-    } catch (error: any) {
-      toast({
-        title: "Erro ao resetar vagas",
-        description: error.message,
-        variant: "destructive",
-      });
-      setResettingVagas(false);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const finalizarEscolhas = async () => {
     if (!escalaId) return;
@@ -398,6 +372,16 @@ export const RoundManager = () => {
 
         {escalaId && (
           <div className="space-y-2">
+            {escalaAtual && (
+              <Button 
+                onClick={togglePausarRodadas} 
+                disabled={loading} 
+                variant="outline"
+                className="w-full"
+              >
+                {escalaAtual.rodadas_pausadas ? "▶️ Continuar Rodadas" : "⏸️ Pausar Rodadas"}
+              </Button>
+            )}
             <Button 
               onClick={() => setFinalizandoEscolhas(true)} 
               disabled={loading} 
@@ -405,15 +389,6 @@ export const RoundManager = () => {
               className="w-full"
             >
               Finalizar Escolha de Atividades
-            </Button>
-            <Button 
-              onClick={() => setResettingVagas(true)} 
-              disabled={loading} 
-              variant="outline"
-              className="w-full border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Resetar Vagas Ocupadas
             </Button>
             <Button 
               onClick={() => setDeletingAllRodadas(true)} 
@@ -462,18 +437,16 @@ export const RoundManager = () => {
                 </div>
               </div>
 
-              <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-                ℹ️ Quando todos os participantes escolherem, clique em "Finalizar Rodada" e a próxima será criada automaticamente com novo sorteio.
-              </div>
+              {escalaAtual?.rodadas_pausadas && (
+                <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg text-sm">
+                  ⏸️ Rodadas pausadas. A progressão automática está desativada.
+                </div>
+              )}
 
-              <div className="flex gap-2">
-                <Button onClick={finalizarRodada} disabled={loading} variant="destructive" className="flex-1">
-                  Finalizar Rodada e Sortear Próxima
-                </Button>
-                <Button onClick={() => setDeletingRodada(true)} disabled={loading} variant="outline" size="icon">
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
+              <Button onClick={() => setDeletingRodada(true)} disabled={loading} variant="outline" className="w-full">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir Rodada Atual
+              </Button>
             </div>
           ) : (
             <Button onClick={iniciarNovaRodada} disabled={loading || !escalaId} className="w-full">
@@ -542,42 +515,6 @@ export const RoundManager = () => {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={finalizarEscolhas}>
               Finalizar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={resettingVagas} onOpenChange={(open) => {
-        setResettingVagas(open);
-        if (!open) setExcluirEscolhas(false);
-      }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Resetar Vagas Ocupadas</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação irá resetar todas as vagas ocupadas das atividades desta escala para 0.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="flex items-center space-x-2 p-4">
-            <Checkbox 
-              id="excluir-escolhas" 
-              checked={excluirEscolhas}
-              onCheckedChange={(checked) => setExcluirEscolhas(checked as boolean)}
-            />
-            <label
-              htmlFor="excluir-escolhas"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Também excluir todas as escolhas dos participantes (remove da visualização)
-            </label>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={resetarVagasOcupadas}
-              className="bg-orange-500 text-white hover:bg-orange-600"
-            >
-              Resetar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
