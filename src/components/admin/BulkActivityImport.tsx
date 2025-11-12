@@ -147,7 +147,6 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
           horario_fim: row.horario_fim,
           vagas_total: parseInt(row.vagas_total),
           observacao: row.observacao || null,
-          eh_fim_semana: isWeekend(dataFormatted),
           vagas_ocupadas: 0
         };
       });
@@ -199,7 +198,6 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
         horario_fim: row.horario_fim,
         vagas_total: parseInt(row.vagas_total),
         observacao: row.observacao || null,
-        eh_fim_semana: isWeekend(row.data),
         vagas_ocupadas: 0
       }));
 
