@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LogOut, ArrowLeft } from "lucide-react";
 import { ScaleForm } from "@/components/admin/ScaleForm";
 import { BulkActivityImport } from "@/components/admin/BulkActivityImport";
+import { ActivityList } from "@/components/admin/ActivityList";
 import { RoundManager } from "@/components/admin/RoundManager";
 import { RulesConfig } from "@/components/admin/RulesConfig";
 import { ScaleView } from "@/components/admin/ScaleView";
@@ -109,7 +110,10 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="atividades" key={`atividades-${refreshKey}`}>
-            <BulkActivityImport onSuccess={handleRefresh} />
+            <div className="space-y-6">
+              <BulkActivityImport onSuccess={handleRefresh} />
+              <ActivityList refreshKey={refreshKey} />
+            </div>
           </TabsContent>
 
           <TabsContent value="rodadas" key={`rodadas-${refreshKey}`}>
