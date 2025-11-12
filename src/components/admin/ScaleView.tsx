@@ -5,9 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, List, Filter } from "lucide-react";
+import { Calendar, List, Filter, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Escolha {
   id: string;
@@ -75,6 +78,79 @@ export const ScaleView = () => {
     if (participantesRes.data) setParticipantes(participantesRes.data);
     
     setLoading(false);
+  };
+
+  const exportToExcel = () => {
+    // Ordenar por data cronologicamente
+    const sortedData = [...filteredEscolhas].sort((a, b) => {
+      const dateA = new Date(a.atividades.data);
+      const dateB = new Date(b.atividades.data);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    const dataForExport = sortedData.map(escolha => ({
+      Participante: escolha.profiles.nome_completo,
+      Tipo: escolha.atividades.tipo,
+      Local: escolha.atividades.local || "-",
+      Data: format(new Date(escolha.atividades.data + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR }),
+      Horário: `${escolha.atividades.horario_inicio} - ${escolha.atividades.horario_fim}`,
+      Escala: escolha.atividades.escalas.nome,
+      Observação: escolha.atividades.observacao || "-"
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataForExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Escala");
+    
+    const fileName = `escala_${format(new Date(), "dd-MM-yyyy_HH-mm", { locale: ptBR })}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Ordenar por data cronologicamente
+    const sortedData = [...filteredEscolhas].sort((a, b) => {
+      const dateA = new Date(a.atividades.data);
+      const dateB = new Date(b.atividades.data);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    const tableData = sortedData.map(escolha => [
+      escolha.profiles.nome_completo,
+      escolha.atividades.tipo,
+      escolha.atividades.local || "-",
+      format(new Date(escolha.atividades.data + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR }),
+      `${escolha.atividades.horario_inicio} - ${escolha.atividades.horario_fim}`,
+      escolha.atividades.escalas.nome,
+      escolha.atividades.observacao || "-"
+    ]);
+
+    doc.setFontSize(16);
+    doc.text("Escala de Atividades", 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 22);
+
+    autoTable(doc, {
+      startY: 28,
+      head: [["Participante", "Tipo", "Local", "Data", "Horário", "Escala", "Observação"]],
+      body: tableData,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [59, 130, 246], fontStyle: "bold" },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 28 },
+        5: { cellWidth: 25 },
+        6: { cellWidth: 35 }
+      },
+      margin: { top: 28 }
+    });
+
+    const fileName = `escala_${format(new Date(), "dd-MM-yyyy_HH-mm", { locale: ptBR })}.pdf`;
+    doc.save(fileName);
   };
 
   const filteredEscolhas = escolhas.filter(escolha => {
@@ -299,9 +375,27 @@ export const ScaleView = () => {
           <div className="text-sm text-muted-foreground">
             Total: {filteredEscolhas.length} atividade(s) alocada(s)
           </div>
-          <Button variant="outline" onClick={fetchData}>
-            Atualizar
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={exportToExcel}
+              disabled={filteredEscolhas.length === 0}
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Exportar Excel
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={exportToPDF}
+              disabled={filteredEscolhas.length === 0}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Exportar PDF
+            </Button>
+            <Button variant="outline" onClick={fetchData}>
+              Atualizar
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
