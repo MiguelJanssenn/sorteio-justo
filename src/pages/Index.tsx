@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, ClipboardList, RefreshCw, LogOut, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PromoteAdminButton } from "@/components/PromoteAdminButton";
 
 const Index = () => {
   const [user, setUser] = useState<any>(null);
@@ -84,6 +85,7 @@ const Index = () => {
             <p className="text-sm text-muted-foreground">Bem-vindo, {profile?.nome_completo}</p>
           </div>
           <div className="flex items-center gap-3">
+            {!isAdmin && <PromoteAdminButton />}
             {isAdmin && (
               <Button variant="outline" onClick={() => navigate("/admin")}>
                 <Settings className="w-4 h-4 mr-2" />
