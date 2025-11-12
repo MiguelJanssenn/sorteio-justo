@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, Clock, Users, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
@@ -28,6 +30,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   const [jaEscolheu, setJaEscolheu] = useState(false);
   const [escolhasPorAtividade, setEscolhasPorAtividade] = useState<Record<string, any[]>>({});
   const [ordemTipos, setOrdemTipos] = useState<string[] | null>(null);
+  const [ocultarEscolhidas, setOcultarEscolhidas] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -370,30 +373,42 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
       )}
 
       <div className="space-y-4">
-        {minhaVez && !jaEscolheu && (
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Escolha uma atividade:</h3>
-            {atividadeSelecionada && (
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setAtividadeSelecionada(null)}
-                  variant="outline"
-                  size="sm"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={confirmarEscolha}
-                  disabled={loading}
-                  size="sm"
-                  className="bg-primary"
-                >
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Confirmar Escolha
-                </Button>
-              </div>
-            )}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="ocultar-escolhidas"
+              checked={ocultarEscolhidas}
+              onCheckedChange={setOcultarEscolhidas}
+            />
+            <Label htmlFor="ocultar-escolhidas" className="text-sm cursor-pointer">
+              Ocultar atividades lotadas
+            </Label>
           </div>
+          
+          {minhaVez && !jaEscolheu && atividadeSelecionada && (
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setAtividadeSelecionada(null)}
+                variant="outline"
+                size="sm"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={confirmarEscolha}
+                disabled={loading}
+                size="sm"
+                className="bg-primary"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Confirmar Escolha
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        {minhaVez && !jaEscolheu && (
+          <h3 className="font-semibold">Escolha uma atividade:</h3>
         )}
 
         {!minhaVez && !jaEscolheu && (
@@ -404,7 +419,9 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
 
         <div className="space-y-2">
           {atividades
-            .filter((atividade) => atividade.vagas_ocupadas < atividade.vagas_total)
+            .filter((atividade) => 
+              !ocultarEscolhidas || atividade.vagas_ocupadas < atividade.vagas_total
+            )
             .map((atividade) => {
             const isSelecionada = atividadeSelecionada === atividade.id;
             const vagasDisponiveis = atividade.vagas_ocupadas < atividade.vagas_total;
