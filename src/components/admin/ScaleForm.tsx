@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, Trash2 } from "lucide-react";
+import { CalendarIcon, Trash2, Pencil } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -18,6 +19,8 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const [loading, setLoading] = useState(false);
   const [escalas, setEscalas] = useState<any[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingEscala, setEditingEscala] = useState<any | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,6 +67,51 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
     } catch (error: any) {
       toast({
         title: "Erro ao criar escala",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (escala: any) => {
+    setEditingEscala({
+      ...escala,
+      periodo_inicio: escala.periodo_inicio,
+      periodo_fim: escala.periodo_fim,
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from("escalas")
+        .update({
+          nome: editingEscala.nome,
+          periodo_inicio: editingEscala.periodo_inicio,
+          periodo_fim: editingEscala.periodo_fim,
+        })
+        .eq("id", editingEscala.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Escala atualizada!",
+        description: "A escala foi atualizada com sucesso.",
+      });
+
+      setEditDialogOpen(false);
+      setEditingEscala(null);
+      await fetchEscalas();
+      onSuccess();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar escala",
         description: error.message,
         variant: "destructive",
       });
@@ -203,36 +251,45 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={deletingId === escala.id}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir Escala</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja excluir a escala "{escala.nome}"? Esta ação não pode ser desfeita.
-                              {"\n\n"}
-                              Nota: Só é possível excluir escalas sem atividades cadastradas.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(escala.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(escala)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={deletingId === escala.id}
                             >
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir Escala</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir a escala "{escala.nome}"? Esta ação não pode ser desfeita.
+                                {"\n\n"}
+                                Nota: Só é possível excluir escalas sem atividades cadastradas.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(escala.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -242,6 +299,68 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
         </CardContent>
       </Card>
     )}
+
+    <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar Escala</DialogTitle>
+          <DialogDescription>
+            Atualize as informações da escala
+          </DialogDescription>
+        </DialogHeader>
+        {editingEscala && (
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <div>
+              <Label htmlFor="edit-nome">Nome da Escala</Label>
+              <Input
+                id="edit-nome"
+                placeholder="Ex: Janeiro 2025"
+                value={editingEscala.nome}
+                onChange={(e) => setEditingEscala({ ...editingEscala, nome: e.target.value })}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-inicio">Data Início</Label>
+                <Input
+                  id="edit-inicio"
+                  type="date"
+                  value={editingEscala.periodo_inicio}
+                  onChange={(e) => setEditingEscala({ ...editingEscala, periodo_inicio: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-fim">Data Fim</Label>
+                <Input
+                  id="edit-fim"
+                  type="date"
+                  value={editingEscala.periodo_fim}
+                  onChange={(e) => setEditingEscala({ ...editingEscala, periodo_fim: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setEditingEscala(null);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
     </div>
   );
 };

@@ -47,7 +47,7 @@ const Auth = () => {
         navigate("/");
       } else {
         // Verificar se o email está autorizado
-        const { data: autorizado, error: checkError } = await supabase
+        const { data: autorizado, error: checkError } = await (supabase as any)
           .rpc('email_autorizado', { email_check: email.toLowerCase().trim() });
 
         if (checkError) throw checkError;

@@ -43,7 +43,7 @@ export const EmailsAutorizados = () => {
 
   const fetchEmails = async () => {
     const { data, error } = await supabase
-      .from("emails_autorizados")
+      .from("emails_autorizados" as any)
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -56,7 +56,7 @@ export const EmailsAutorizados = () => {
       return;
     }
 
-    setEmails(data || []);
+    setEmails((data as any) || []);
   };
 
   const adicionarEmail = async () => {
@@ -85,7 +85,7 @@ export const EmailsAutorizados = () => {
     const { data: { user } } = await supabase.auth.getUser();
 
     const { error } = await supabase
-      .from("emails_autorizados")
+      .from("emails_autorizados" as any)
       .insert([
         {
           email: novoEmail.toLowerCase().trim(),
@@ -115,7 +115,7 @@ export const EmailsAutorizados = () => {
     setLoading(true);
 
     const { error } = await supabase
-      .from("emails_autorizados")
+      .from("emails_autorizados" as any)
       .delete()
       .eq("id", id);
 
