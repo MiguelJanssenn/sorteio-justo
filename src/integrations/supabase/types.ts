@@ -393,12 +393,20 @@ export type Database = {
         Args: { escala_id_param: string }
         Returns: Json
       }
+      has_active_rounds: {
+        Args: { escala_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      resetar_vagas_ocupadas: {
+        Args: { escala_id_param?: string }
+        Returns: Json
       }
     }
     Enums: {

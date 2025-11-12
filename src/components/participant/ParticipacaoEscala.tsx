@@ -76,6 +76,24 @@ export const ParticipacaoEscala = () => {
 
       const participando = isParticipando(escalaId);
       
+      // Se está tentando sair, verificar se há rodadas ativas com escolhas
+      if (participando) {
+        const { data: hasActiveRounds } = await supabase.rpc('has_active_rounds', {
+          user_id_param: user.id,
+          escala_id_param: escalaId
+        });
+
+        if (hasActiveRounds) {
+          toast({
+            title: "Não é possível sair",
+            description: "Você possui escolhas em rodadas ativas. Não é permitido sair no meio do processo de seleção.",
+            variant: "destructive",
+          });
+          setLoading(null);
+          return;
+        }
+      }
+      
       if (hasParticipacao(escalaId)) {
         // Atualizar participação existente
         const { error } = await supabase
@@ -189,7 +207,7 @@ export const ParticipacaoEscala = () => {
           <p className="font-medium mb-1">ℹ️ Como funciona:</p>
           <ul className="list-disc list-inside space-y-1">
             <li>Clique em "Participar" para ser incluído no sorteio das rodadas</li>
-            <li>Você pode sair a qualquer momento clicando em "Sair"</li>
+            <li>Você NÃO pode sair no meio do processo se já tiver escolhas em rodadas ativas</li>
             <li>Apenas participantes ativos serão sorteados nas próximas rodadas</li>
           </ul>
         </div>

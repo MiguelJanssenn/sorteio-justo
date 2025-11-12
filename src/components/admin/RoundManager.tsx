@@ -16,6 +16,7 @@ export const RoundManager = () => {
   const [loading, setLoading] = useState(false);
   const [deletingRodada, setDeletingRodada] = useState(false);
   const [deletingAllRodadas, setDeletingAllRodadas] = useState(false);
+  const [resettingVagas, setResettingVagas] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -283,6 +284,37 @@ export const RoundManager = () => {
     }
   };
 
+  const resetarVagasOcupadas = async () => {
+    if (!escalaId) return;
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.rpc('resetar_vagas_ocupadas', {
+        escala_id_param: escalaId
+      });
+
+      if (error) throw error;
+
+      const resultado = data as { atividades_resetadas: number };
+
+      toast({
+        title: "Vagas resetadas!",
+        description: `${resultado.atividades_resetadas} atividade(s) tiveram suas vagas ocupadas resetadas para 0.`,
+      });
+
+      setResettingVagas(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao resetar vagas",
+        description: error.message,
+        variant: "destructive",
+      });
+      setResettingVagas(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <Card>
@@ -313,15 +345,26 @@ export const RoundManager = () => {
         </div>
 
         {escalaId && (
-          <Button 
-            onClick={() => setDeletingAllRodadas(true)} 
-            disabled={loading} 
-            variant="outline"
-            className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Excluir Todas as Rodadas desta Escala
-          </Button>
+          <div className="space-y-2">
+            <Button 
+              onClick={() => setResettingVagas(true)} 
+              disabled={loading} 
+              variant="outline"
+              className="w-full border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Resetar Vagas Ocupadas
+            </Button>
+            <Button 
+              onClick={() => setDeletingAllRodadas(true)} 
+              disabled={loading} 
+              variant="outline"
+              className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Excluir Todas as Rodadas desta Escala
+            </Button>
+          </div>
         )}
 
         {rodadaAtual ? (
@@ -420,6 +463,28 @@ export const RoundManager = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir Todas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={resettingVagas} onOpenChange={setResettingVagas}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resetar Vagas Ocupadas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá resetar todas as vagas ocupadas das atividades desta escala para 0.
+              {"\n\n"}
+              Use isto apenas para corrigir inconsistências nos dados. As escolhas dos participantes não serão afetadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={resetarVagasOcupadas}
+              className="bg-orange-500 text-white hover:bg-orange-600"
+            >
+              Resetar Vagas
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
