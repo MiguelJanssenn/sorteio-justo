@@ -15,6 +15,8 @@ import { RodadaStatus } from "@/components/participant/RodadaStatus";
 import { EscalaAtivaCard } from "@/components/participant/EscalaAtivaCard";
 import { MinhasAtividades } from "@/components/participant/MinhasAtividades";
 import { RodadaAtualCard } from "@/components/participant/RodadaAtualCard";
+import { MinhasEscolhas } from "@/components/participant/MinhasEscolhas";
+import { SistemaTrocas } from "@/components/participant/SistemaTrocas";
 
 const Index = () => {
   const [user, setUser] = useState<any>(null);
@@ -140,41 +142,11 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="minhas" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Minhas Escolhas</CardTitle>
-                <CardDescription>
-                  Visualize todas as atividades que você selecionou
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <ClipboardList className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    Você ainda não fez nenhuma escolha
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <MinhasEscolhas />
           </TabsContent>
 
           <TabsContent value="trocas" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sistema de Trocas</CardTitle>
-                <CardDescription>
-                  Solicite ou aceite trocas de atividades com outros participantes
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <RefreshCw className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    Nenhuma solicitação de troca pendente
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <SistemaTrocas />
           </TabsContent>
         </Tabs>
       </main>
