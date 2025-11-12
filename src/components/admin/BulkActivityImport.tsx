@@ -123,7 +123,7 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
       // Valid tipo values
-      const validTipos = ['Plantão', 'Ambulatório', 'Enfermaria', 'Bloco'];
+      const validTipos = ['Plantão', 'Bloco', 'Enfermaria', 'Ambulatório'];
 
       const validActivities: any[] = [];
       const errors: string[] = [];
@@ -133,7 +133,7 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
           // Normalize tipo - trim and check if valid
           const tipoNormalized = String(row.tipo || '').trim();
           if (!validTipos.includes(tipoNormalized)) {
-            throw new Error(`Tipo "${row.tipo}" inválido. Valores aceitos: Plantão, Ambulatório, Enfermaria, Bloco`);
+            throw new Error(`Tipo "${row.tipo}" inválido. Valores aceitos: Plantão, Bloco, Enfermaria, Ambulatório`);
           }
 
           // Handle different date formats (Excel can return dates as numbers or strings)
@@ -346,8 +346,9 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Plantão">Plantão</SelectItem>
-                        <SelectItem value="Ambulatório">Ambulatório</SelectItem>
+                        <SelectItem value="Bloco">Bloco</SelectItem>
                         <SelectItem value="Enfermaria">Enfermaria</SelectItem>
+                        <SelectItem value="Ambulatório">Ambulatório</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
@@ -471,7 +472,7 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
                   <li>Baixe o modelo de planilha</li>
                   <li><strong>escala_id:</strong> Copie o ID da aba "Escalas Disponíveis"</li>
                   <li>Preencha com os dados das atividades no Excel</li>
-                  <li>Tipos válidos: Plantão, Ambulatório, Enfermaria</li>
+                  <li>Tipos válidos: Plantão, Bloco, Enfermaria, Ambulatório</li>
                   <li>Formato de data: DD/MM/AAAA (ex: 25/12/2024) ou deixe o Excel formatar</li>
                   <li>Formato de horário: HH:MM (ex: 08:00)</li>
                   <li>Faça o upload do arquivo preenchido</li>
