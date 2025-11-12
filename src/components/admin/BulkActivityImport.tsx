@@ -57,6 +57,77 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
     }]);
   };
 
+  const addMultipleRows = (count: number) => {
+    const newRows = Array.from({ length: count }, () => ({
+      id: crypto.randomUUID(),
+      escala_id: "",
+      tipo: "",
+      local: "",
+      data: "",
+      horario_inicio: "",
+      horario_fim: "",
+      vagas_total: "1",
+      observacao: ""
+    }));
+    setRows(prev => [...prev, ...newRows]);
+  };
+
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    const lines = pastedText.split('\n').filter(line => line.trim());
+    
+    if (lines.length === 0) return;
+
+    const newRows: ActivityRow[] = [];
+    
+    lines.forEach(line => {
+      const cells = line.split('\t');
+      if (cells.length >= 6) {
+        // Assuming paste format: escala_id, tipo, local, data, horario_inicio, horario_fim, vagas_total, observacao
+        const [escalaIdOrName, tipo, local, data, horarioInicio, horarioFim, vagas = "1", obs = ""] = cells;
+        
+        // Try to match escala by name if not UUID
+        let escalaId = escalaIdOrName.trim();
+        if (!escalaId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          const foundEscala = escalas.find(e => 
+            e.nome.toLowerCase() === escalaId.toLowerCase()
+          );
+          if (foundEscala) {
+            escalaId = foundEscala.id;
+          }
+        }
+
+        // Convert date from DD/MM/YYYY to YYYY-MM-DD if needed
+        let dataFormatted = data.trim();
+        if (dataFormatted.includes('/')) {
+          const [day, month, year] = dataFormatted.split('/');
+          dataFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        newRows.push({
+          id: crypto.randomUUID(),
+          escala_id: escalaId,
+          tipo: tipo.trim(),
+          local: local.trim(),
+          data: dataFormatted,
+          horario_inicio: horarioInicio.trim(),
+          horario_fim: horarioFim.trim(),
+          vagas_total: vagas.trim() || "1",
+          observacao: obs.trim()
+        });
+      }
+    });
+
+    if (newRows.length > 0) {
+      setRows(prev => [...prev, ...newRows]);
+      toast({
+        title: "Dados colados!",
+        description: `${newRows.length} linha(s) adicionada(s) da área de transferência.`,
+      });
+    }
+  };
+
   const updateRow = (id: string, field: keyof ActivityRow, value: string) => {
     setRows(prev => prev.map(row => 
       row.id === id ? { ...row, [field]: value } : row
@@ -293,21 +364,24 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileSpreadsheet className="w-5 h-5" />
-          Cadastro de Atividades
+          Cadastro em Lote - Planilha
         </CardTitle>
         <CardDescription>
-          Adicione múltiplas atividades usando planilha editável ou importação
+          Cole dados do Excel/Sheets diretamente ou edite linha por linha
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="editavel" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="editavel">Planilha Editável</TabsTrigger>
-            <TabsTrigger value="importar">Importar Planilha</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="editavel" className="space-y-4">
-        <div className="overflow-x-auto">
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2 p-4 bg-muted rounded-lg text-sm">
+            <p className="font-semibold">💡 Dica: Cole dados do Excel/Sheets</p>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              <li>Copie células do Excel/Sheets (Ctrl+C)</li>
+              <li>Clique na primeira célula vazia da planilha abaixo</li>
+              <li>Cole os dados (Ctrl+V) - as linhas serão criadas automaticamente</li>
+              <li>Ordem das colunas: Escala, Tipo, Local, Data, Início, Fim, Vagas, Observação</li>
+            </ul>
+          </div>
+        <div className="overflow-x-auto" onPaste={handlePaste}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -419,68 +493,32 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
           </Table>
         </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button variant="outline" onClick={addEmptyRow} disabled={loading}>
                 <Plus className="w-4 h-4 mr-2" />
-                Adicionar Linha
+                Adicionar 1 Linha
               </Button>
-              <Button onClick={handleSave} disabled={loading}>
+              <Button variant="outline" onClick={() => addMultipleRows(10)} disabled={loading}>
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar 10 Linhas
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setRows([]);
+                  addEmptyRow();
+                }} 
+                disabled={loading || rows.length === 0}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Limpar Tudo
+              </Button>
+              <Button onClick={handleSave} disabled={loading} className="ml-auto">
                 <Save className="w-4 h-4 mr-2" />
-                {loading ? "Salvando..." : "Salvar Todas"}
+                {loading ? "Salvando..." : `Salvar ${rows.filter(r => r.escala_id && r.tipo && r.data).length} Atividades`}
               </Button>
             </div>
-          </TabsContent>
-
-          <TabsContent value="importar" className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex flex-col gap-3">
-                <Button
-                  variant="outline"
-                  onClick={downloadTemplate}
-                  className="w-full"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Baixar Modelo de Planilha
-                </Button>
-
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleFileUpload}
-                    disabled={loading}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    id="file-upload"
-                  />
-                  <Button
-                    variant="default"
-                    disabled={loading}
-                    className="w-full"
-                    asChild
-                  >
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <Upload className="w-4 h-4 mr-2" />
-                      {loading ? "Importando..." : "Fazer Upload da Planilha"}
-                    </label>
-                  </Button>
-                </div>
-              </div>
-
-              <div className="text-sm text-muted-foreground space-y-1 p-4 bg-muted rounded-lg">
-                <p className="font-semibold">Instruções:</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>Baixe o modelo de planilha</li>
-                  <li><strong>escala_id:</strong> Copie o ID da aba "Escalas Disponíveis"</li>
-                  <li>Preencha com os dados das atividades no Excel</li>
-                  <li>Tipos válidos: Plantão, Bloco, Enfermaria, Ambulatório</li>
-                  <li>Formato de data: DD/MM/AAAA (ex: 25/12/2024) ou deixe o Excel formatar</li>
-                  <li>Formato de horário: HH:MM (ex: 08:00)</li>
-                  <li>Faça o upload do arquivo preenchido</li>
-                </ol>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+          </div>
       </CardContent>
     </Card>
   );
