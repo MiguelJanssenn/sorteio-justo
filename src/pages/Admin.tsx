@@ -81,31 +81,34 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-              <ArrowLeft className="w-5 h-5" />
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0">
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              </Button>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Painel Admin</h1>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <LogOut className="w-4 h-4" />
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">Painel Administrativo</h1>
           </div>
-          <Button variant="ghost" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Sair
-          </Button>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="escalas" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="escalas">Escalas</TabsTrigger>
-            <TabsTrigger value="atividades">Atividades</TabsTrigger>
-            <TabsTrigger value="rodadas">Rodadas</TabsTrigger>
-            <TabsTrigger value="regras">Regras</TabsTrigger>
-            <TabsTrigger value="visualizar">Visualizar</TabsTrigger>
-            <TabsTrigger value="participantes">Participantes</TabsTrigger>
-            <TabsTrigger value="emails">Emails</TabsTrigger>
-          </TabsList>
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <Tabs defaultValue="escalas" className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-7">
+              <TabsTrigger value="escalas" className="text-xs sm:text-sm whitespace-nowrap">Escalas</TabsTrigger>
+              <TabsTrigger value="atividades" className="text-xs sm:text-sm whitespace-nowrap">Atividades</TabsTrigger>
+              <TabsTrigger value="rodadas" className="text-xs sm:text-sm whitespace-nowrap">Rodadas</TabsTrigger>
+              <TabsTrigger value="regras" className="text-xs sm:text-sm whitespace-nowrap">Regras</TabsTrigger>
+              <TabsTrigger value="visualizar" className="text-xs sm:text-sm whitespace-nowrap">Visualizar</TabsTrigger>
+              <TabsTrigger value="participantes" className="text-xs sm:text-sm whitespace-nowrap">Participantes</TabsTrigger>
+              <TabsTrigger value="emails" className="text-xs sm:text-sm whitespace-nowrap">Emails</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="escalas" key={`escalas-${refreshKey}`}>
             <ScaleForm onSuccess={handleRefresh} />

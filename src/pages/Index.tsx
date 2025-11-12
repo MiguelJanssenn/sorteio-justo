@@ -88,40 +88,46 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Escalas de Internato</h1>
-            <p className="text-sm text-muted-foreground">Bem-vindo, {profile?.nome_completo}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {!isAdmin && <PromoteAdminButton />}
-            {isAdmin && (
-              <Button variant="outline" onClick={() => navigate("/admin")}>
-                <Settings className="w-4 h-4 mr-2" />
-                Admin
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Escalas de Internato</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">Bem-vindo, {profile?.nome_completo}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {!isAdmin && <PromoteAdminButton />}
+              {isAdmin && (
+                <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="hidden sm:flex">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Admin
+                </Button>
+              )}
+              {isAdmin && (
+                <Button variant="outline" size="icon" onClick={() => navigate("/admin")} className="sm:hidden">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
+                <LogOut className="w-4 h-4" />
               </Button>
-            )}
-            <Button variant="ghost" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-3 mb-6 sm:mb-8">
           <EscalaAtivaCard />
           <MinhasAtividades />
           <RodadaAtualCard />
         </div>
 
         <Tabs defaultValue="participacao" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="participacao">Participação</TabsTrigger>
-            <TabsTrigger value="escolher">Escolher Atividades</TabsTrigger>
-            <TabsTrigger value="minhas">Minhas Escolhas</TabsTrigger>
-            <TabsTrigger value="trocas">Trocas</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+            <TabsTrigger value="participacao" className="text-xs sm:text-sm">Participação</TabsTrigger>
+            <TabsTrigger value="escolher" className="text-xs sm:text-sm">Escolher</TabsTrigger>
+            <TabsTrigger value="minhas" className="text-xs sm:text-sm">Minhas</TabsTrigger>
+            <TabsTrigger value="trocas" className="text-xs sm:text-sm">Trocas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="participacao" className="space-y-4">
@@ -131,11 +137,11 @@ const Index = () => {
 
           <TabsContent value="escolher" className="space-y-4">
             <VezAtual />
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
+              <div className="order-2 lg:order-1">
                 <RodadaStatus />
               </div>
-              <div>
+              <div className="order-1 lg:order-2">
                 {user && <ActivitySelection userId={user.id} />}
               </div>
             </div>

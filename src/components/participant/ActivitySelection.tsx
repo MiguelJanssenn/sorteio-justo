@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, Clock, Users, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
@@ -32,6 +33,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   const [ordemTipos, setOrdemTipos] = useState<string[] | null>(null);
   const [ocultarEscolhidas, setOcultarEscolhidas] = useState(true);
   const [rodadasPausadas, setRodadasPausadas] = useState(false);
+  const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -348,9 +350,9 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   if (!rodadaAtual) {
     return (
       <Card>
-        <CardContent className="py-12 text-center">
-          <Calendar className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground">
+        <CardContent className="py-8 sm:py-12 text-center">
+          <Calendar className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+          <p className="text-sm sm:text-base text-muted-foreground">
             Nenhuma rodada ativa no momento
           </p>
         </CardContent>
@@ -359,25 +361,25 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Rodada {rodadaAtual.numero}</CardTitle>
-              <CardDescription>{rodadaAtual.escalas.nome}</CardDescription>
+        <CardHeader className="pb-3 sm:pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="space-y-1">
+              <CardTitle className="text-lg sm:text-xl">Rodada {rodadaAtual.numero}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">{rodadaAtual.escalas.nome}</CardDescription>
             </div>
             {minhaVez ? (
-              <Badge className="bg-primary">Sua vez!</Badge>
+              <Badge className="bg-primary self-start sm:self-auto">Sua vez!</Badge>
             ) : (
-              <Badge variant="secondary">Aguardando</Badge>
+              <Badge variant="secondary" className="self-start sm:self-auto">Aguardando</Badge>
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {!minhaVez && participanteAtual && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Users className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
               Vez de: <strong className="text-foreground">{participanteAtual.nome_completo}</strong>
             </div>
           )}
@@ -386,10 +388,10 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
 
       {rodadasPausadas && (
         <Card className="bg-yellow-500/10 border-yellow-500/50">
-          <CardContent className="py-8 text-center">
-            <div className="w-12 h-12 mx-auto mb-3 text-yellow-600 dark:text-yellow-400 text-3xl">⏸️</div>
-            <p className="font-semibold text-lg">Rodadas Pausadas</p>
-            <p className="text-sm text-muted-foreground mt-2">
+          <CardContent className="py-6 sm:py-8 text-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 text-yellow-600 dark:text-yellow-400 text-2xl sm:text-3xl">⏸️</div>
+            <p className="font-semibold text-base sm:text-lg">Rodadas Pausadas</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
               O administrador pausou as rodadas. Aguarde a liberação para continuar.
             </p>
           </CardContent>
@@ -398,66 +400,89 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
 
       {!rodadasPausadas && jaEscolheu && (
         <Card className="bg-muted">
-          <CardContent className="py-8 text-center">
-            <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-primary" />
-            <p className="font-semibold text-lg">Você já escolheu uma atividade!</p>
-            <p className="text-sm text-muted-foreground mt-2">
+          <CardContent className="py-6 sm:py-8 text-center">
+            <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 text-primary" />
+            <p className="font-semibold text-base sm:text-lg">Você já escolheu uma atividade!</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
               Aguarde a próxima rodada para fazer uma nova escolha.
             </p>
           </CardContent>
         </Card>
       )}
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="ocultar-escolhidas"
-              checked={ocultarEscolhidas}
-              onCheckedChange={setOcultarEscolhidas}
-            />
-            <Label htmlFor="ocultar-escolhidas" className="text-sm cursor-pointer">
-              Ocultar atividades lotadas
-            </Label>
-          </div>
-          
-          {minhaVez && !jaEscolheu && !rodadasPausadas && atividadeSelecionada && (
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setAtividadeSelecionada(null)}
-                variant="outline"
-                size="sm"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={confirmarEscolha}
-                disabled={loading}
-                size="sm"
-                className="bg-primary"
-              >
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                Confirmar Escolha
-              </Button>
+      <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="ocultar-escolhidas"
+                checked={ocultarEscolhidas}
+                onCheckedChange={setOcultarEscolhidas}
+              />
+              <Label htmlFor="ocultar-escolhidas" className="text-xs sm:text-sm cursor-pointer">
+                Ocultar atividades lotadas
+              </Label>
             </div>
-          )}
+            
+            {minhaVez && !jaEscolheu && !rodadasPausadas && atividadeSelecionada && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setAtividadeSelecionada(null)}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs sm:text-sm"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={confirmarEscolha}
+                  disabled={loading}
+                  size="sm"
+                  className="bg-primary text-xs sm:text-sm"
+                >
+                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  Confirmar
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <Label htmlFor="tipo-filtro" className="text-xs sm:text-sm shrink-0">
+              Filtrar por tipo:
+            </Label>
+            <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
+              <SelectTrigger id="tipo-filtro" className="w-full sm:w-[200px] h-9">
+                <SelectValue placeholder="Todos os tipos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os tipos</SelectItem>
+                <SelectItem value="Plantão">Plantão</SelectItem>
+                <SelectItem value="Ambulatório">Ambulatório</SelectItem>
+                <SelectItem value="Enfermaria">Enfermaria</SelectItem>
+                <SelectItem value="Bloco">Bloco</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         {minhaVez && !jaEscolheu && !rodadasPausadas && (
-          <h3 className="font-semibold">Escolha uma atividade:</h3>
+          <h3 className="font-semibold text-sm sm:text-base">Escolha uma atividade:</h3>
         )}
 
         {!minhaVez && !jaEscolheu && !rodadasPausadas && (
-          <div className="text-sm text-muted-foreground text-center py-2">
+          <div className="text-xs sm:text-sm text-muted-foreground text-center py-2">
             Visualizando atividades disponíveis
           </div>
         )}
 
         <div className="space-y-2">
           {atividades
-            .filter((atividade) => 
-              !ocultarEscolhidas || atividade.vagas_ocupadas < atividade.vagas_total
-            )
+            .filter((atividade) => {
+              const filtroTipo = tipoFiltro === "todos" || atividade.tipo === tipoFiltro;
+              const filtroVagas = !ocultarEscolhidas || atividade.vagas_ocupadas < atividade.vagas_total;
+              return filtroTipo && filtroVagas;
+            })
             .map((atividade) => {
             const isSelecionada = atividadeSelecionada === atividade.id;
             const vagasDisponiveis = atividade.vagas_ocupadas < atividade.vagas_total;
@@ -488,11 +513,11 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
                 }`}
                 onClick={() => podeSelecionar && setAtividadeSelecionada(atividade.id)}
               >
-                <CardContent className="p-3">
+                <CardContent className="p-2.5 sm:p-3">
                   <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="flex gap-2">
+                    <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className="flex gap-1.5 sm:gap-2 flex-wrap">
                           <Badge variant={
                             atividade.tipo === "Plantão" ? "default" :
                             atividade.tipo === "Ambulatório" ? "secondary" : "outline"
@@ -509,19 +534,21 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
                           )}
                           {jaEscolhiEstaAtividade && (
                             <Badge variant="outline" className="text-xs bg-primary/10 text-primary">
-                              Já escolhida por você
+                              Já escolhida
                             </Badge>
                           )}
                         </div>
                         
-                        <div className="flex items-center gap-3 text-xs flex-1">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {format(new Date(atividade.data + "T00:00:00"), "dd/MM", { locale: ptBR })}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {atividade.horario_inicio}-{atividade.horario_fim}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 text-xs flex-1">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {format(new Date(atividade.data + "T00:00:00"), "dd/MM", { locale: ptBR })}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {atividade.horario_inicio}-{atividade.horario_fim}
+                            </div>
                           </div>
                           {atividade.local && (
                             <div className="flex items-center gap-1 font-semibold text-primary">
@@ -529,24 +556,26 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
                             </div>
                           )}
                         </div>
+                      </div>
 
+                      <div className="flex items-center gap-2 shrink-0">
                         <div className={`flex items-center gap-1 text-xs ${
                           vagasDisponiveis ? "text-muted-foreground" : "text-destructive font-semibold"
                         }`}>
                           <Users className="w-3 h-3" />
-                          {atividade.vagas_ocupadas}/{atividade.vagas_total}
+                          <span className="hidden sm:inline">{atividade.vagas_ocupadas}/{atividade.vagas_total}</span>
+                          <span className="sm:hidden">{atividade.vagas_ocupadas}/{atividade.vagas_total}</span>
                         </div>
+                        {isSelecionada && (
+                          <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                        )}
                       </div>
-
-                      {isSelecionada && (
-                        <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
-                      )}
                     </div>
                     
                     {escolhasDestaAtividade.length > 0 && (
-                      <div className="flex items-center gap-2 text-xs pt-2 border-t mt-2">
-                        <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                        <div className="flex flex-col gap-1">
+                      <div className="flex items-start gap-2 text-xs pt-2 border-t mt-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0 mt-0.5" />
+                        <div className="flex flex-col gap-1 flex-1 min-w-0">
                           <span className="font-semibold text-foreground">
                             Escolhida por:
                           </span>
@@ -571,11 +600,18 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
           })}
         </div>
 
-        {atividades.filter((a) => a.vagas_ocupadas < a.vagas_total).length === 0 && (
+        {atividades
+          .filter((a) => {
+            const filtroTipo = tipoFiltro === "todos" || a.tipo === tipoFiltro;
+            const filtroVagas = !ocultarEscolhidas || a.vagas_ocupadas < a.vagas_total;
+            return filtroTipo && filtroVagas;
+          }).length === 0 && (
           <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
+            <CardContent className="py-6 sm:py-8 text-center text-muted-foreground">
               {atividades.length === 0 
                 ? "Nenhuma atividade cadastrada para esta escala"
+                : tipoFiltro !== "todos"
+                ? `Nenhuma atividade do tipo "${tipoFiltro}" disponível`
                 : "Todas as atividades já estão com vagas completas"
               }
             </CardContent>
