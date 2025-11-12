@@ -19,6 +19,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   const [loading, setLoading] = useState(false);
   const [participanteAtual, setParticipanteAtual] = useState<any>(null);
   const [atividadeSelecionada, setAtividadeSelecionada] = useState<string | null>(null);
+  const [jaEscolheu, setJaEscolheu] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -62,6 +63,16 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
 
     setRodadaAtual(rodada);
 
+    // Verificar se já escolheu nesta rodada
+    const { data: escolhaExistente } = await supabase
+      .from("escolhas")
+      .select("id")
+      .eq("rodada_id", rodada.id)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    setJaEscolheu(!!escolhaExistente);
+
     // Verificar se é minha vez
     const ordemAtual = rodada.ordem_sorteada[rodada.indice_atual];
     setMinhaVez(ordemAtual === userId);
@@ -91,10 +102,29 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   };
 
   const confirmarEscolha = async () => {
-    if (!minhaVez || !rodadaAtual || !atividadeSelecionada) return;
+    if (!minhaVez || !rodadaAtual || !atividadeSelecionada || jaEscolheu) return;
     setLoading(true);
 
     try {
+      // Verificar novamente se já escolheu (segurança)
+      const { data: escolhaExistente } = await supabase
+        .from("escolhas")
+        .select("id")
+        .eq("rodada_id", rodadaAtual.id)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (escolhaExistente) {
+        toast({
+          title: "Você já escolheu!",
+          description: "Você já registrou uma escolha nesta rodada.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        setJaEscolheu(true);
+        return;
+      }
+
       // Registrar escolha
       const { error: escolhaError } = await supabase.from("escolhas").insert({
         rodada_id: rodadaAtual.id,
@@ -131,6 +161,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
       }
 
       setAtividadeSelecionada(null);
+      setJaEscolheu(true);
       fetchRodadaAtual();
     } catch (error: any) {
       toast({
@@ -182,7 +213,19 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
         </CardContent>
       </Card>
 
-      {minhaVez && (
+      {jaEscolheu && (
+        <Card className="bg-muted">
+          <CardContent className="py-8 text-center">
+            <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-primary" />
+            <p className="font-semibold text-lg">Você já escolheu uma atividade!</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Aguarde a próxima rodada para fazer uma nova escolha.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {minhaVez && !jaEscolheu && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Escolha uma atividade:</h3>
