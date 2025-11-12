@@ -130,11 +130,11 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
     if (atividadesData) {
       setAtividades(atividadesData);
       
-      // Buscar escolhas para cada atividade
+      // Buscar TODAS as escolhas da escala (todas as rodadas)
       const { data: escolhasData } = await supabase
         .from("escolhas")
-        .select("*, profiles(nome_completo)")
-        .eq("rodada_id", rodada.id);
+        .select("*, profiles(nome_completo), rodadas!inner(escala_id)")
+        .eq("rodadas.escala_id", rodada.escala_id);
       
       // Organizar escolhas por atividade
       const escolhasPorAtiv: Record<string, any[]> = {};
@@ -156,7 +156,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
     try {
       console.log('Confirmando escolha para rodada:', rodadaAtual.id);
       
-      // Verificar novamente se já escolheu (segurança)
+      // Verificar novamente se já escolheu nesta rodada (segurança)
       const { data: escolhaExistente } = await supabase
         .from("escolhas")
         .select("id")
@@ -172,6 +172,26 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
         });
         setLoading(false);
         setJaEscolheu(true);
+        return;
+      }
+
+      // Verificar se já escolheu esta atividade em alguma rodada anterior da mesma escala
+      const { data: escolhaAtividadeAnterior } = await supabase
+        .from("escolhas")
+        .select("id, rodadas!inner(escala_id)")
+        .eq("user_id", userId)
+        .eq("atividade_id", atividadeSelecionada)
+        .eq("rodadas.escala_id", rodadaAtual.escala_id)
+        .maybeSingle();
+
+      if (escolhaAtividadeAnterior) {
+        toast({
+          title: "Atividade já escolhida!",
+          description: "Você já escolheu esta atividade em uma rodada anterior.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        setAtividadeSelecionada(null);
         return;
       }
 
@@ -323,8 +343,9 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
           {atividades.map((atividade) => {
             const isSelecionada = atividadeSelecionada === atividade.id;
             const vagasDisponiveis = atividade.vagas_ocupadas < atividade.vagas_total;
-            const podeSelecionar = minhaVez && !jaEscolheu && vagasDisponiveis;
             const escolhasDestaAtividade = escolhasPorAtividade[atividade.id] || [];
+            const jaEscolhiEstaAtividade = escolhasDestaAtividade.some((e: any) => e.user_id === userId);
+            const podeSelecionar = minhaVez && !jaEscolheu && vagasDisponiveis && !jaEscolhiEstaAtividade;
             
             return (
               <Card 
@@ -361,6 +382,11 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
                           {!vagasDisponiveis && (
                             <Badge variant="outline" className="text-xs bg-muted">
                               Lotada
+                            </Badge>
+                          )}
+                          {jaEscolhiEstaAtividade && (
+                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary">
+                              Já escolhida por você
                             </Badge>
                           )}
                         </div>
