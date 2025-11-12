@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CalendarIcon, Trash2, Pencil } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -95,6 +96,7 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
           nome: editingEscala.nome,
           periodo_inicio: editingEscala.periodo_inicio,
           periodo_fim: editingEscala.periodo_fim,
+          status: editingEscala.status,
         })
         .eq("id", editingEscala.id);
 
@@ -341,6 +343,24 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
                   required
                 />
               </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-status">Status</Label>
+              <Select
+                value={editingEscala.status}
+                onValueChange={(value) => setEditingEscala({ ...editingEscala, status: value })}
+              >
+                <SelectTrigger id="edit-status">
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ativa">Ativa</SelectItem>
+                  <SelectItem value="finalizada">Finalizada</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground mt-1">
+                Reative uma escala finalizada para permitir trocas ou adição de atividades
+              </p>
             </div>
             <div className="flex gap-2 justify-end">
               <Button
