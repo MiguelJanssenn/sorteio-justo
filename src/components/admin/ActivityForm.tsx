@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ClipboardList } from "lucide-react";
 
@@ -16,6 +17,7 @@ export const ActivityForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const [horarioInicio, setHorarioInicio] = useState("");
   const [horarioFim, setHorarioFim] = useState("");
   const [vagasTotal, setVagasTotal] = useState("1");
+  const [observacao, setObservacao] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -51,6 +53,7 @@ export const ActivityForm = ({ onSuccess }: { onSuccess: () => void }) => {
         horario_inicio: horarioInicio,
         horario_fim: horarioFim,
         vagas_total: parseInt(vagasTotal),
+        observacao: observacao || null,
         eh_fim_semana: isWeekend(data)
       });
 
@@ -66,6 +69,7 @@ export const ActivityForm = ({ onSuccess }: { onSuccess: () => void }) => {
       setHorarioInicio("");
       setHorarioFim("");
       setVagasTotal("1");
+      setObservacao("");
       onSuccess();
     } catch (error: any) {
       toast({
@@ -164,6 +168,17 @@ export const ActivityForm = ({ onSuccess }: { onSuccess: () => void }) => {
               value={vagasTotal}
               onChange={(e) => setVagasTotal(e.target.value)}
               required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="observacao">Observação (opcional)</Label>
+            <Textarea
+              id="observacao"
+              value={observacao}
+              onChange={(e) => setObservacao(e.target.value)}
+              placeholder="Adicione informações extras sobre a atividade..."
+              rows={3}
             />
           </div>
 
