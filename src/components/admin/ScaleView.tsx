@@ -173,8 +173,9 @@ export const ScaleView = () => {
               <SelectContent>
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 <SelectItem value="Plantão">Plantão</SelectItem>
-                <SelectItem value="Ambulatório">Ambulatório</SelectItem>
+                <SelectItem value="Bloco">Bloco</SelectItem>
                 <SelectItem value="Enfermaria">Enfermaria</SelectItem>
+                <SelectItem value="Ambulatório">Ambulatório</SelectItem>
               </SelectContent>
             </Select>
           </div>

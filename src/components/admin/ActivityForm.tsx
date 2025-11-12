@@ -13,6 +13,7 @@ export const ActivityForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const [escalas, setEscalas] = useState<any[]>([]);
   const [escalaId, setEscalaId] = useState("");
   const [tipo, setTipo] = useState("");
+  const [local, setLocal] = useState("");
   const [data, setData] = useState("");
   const [horarioInicio, setHorarioInicio] = useState("");
   const [horarioFim, setHorarioFim] = useState("");
@@ -49,6 +50,7 @@ export const ActivityForm = ({ onSuccess }: { onSuccess: () => void }) => {
       const { error } = await supabase.from("atividades").insert({
         escala_id: escalaId,
         tipo,
+        local: local || null,
         data,
         horario_inicio: horarioInicio,
         horario_fim: horarioFim,
@@ -65,6 +67,7 @@ export const ActivityForm = ({ onSuccess }: { onSuccess: () => void }) => {
       });
 
       setTipo("");
+      setLocal("");
       setData("");
       setHorarioInicio("");
       setHorarioFim("");
@@ -124,6 +127,17 @@ export const ActivityForm = ({ onSuccess }: { onSuccess: () => void }) => {
                 <SelectItem value="Ambulatório">Ambulatório</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="local">Local (opcional)</Label>
+            <Input
+              id="local"
+              type="text"
+              placeholder="Ex: Hospital Central, Pronto Socorro..."
+              value={local}
+              onChange={(e) => setLocal(e.target.value)}
+            />
           </div>
 
           <div>
