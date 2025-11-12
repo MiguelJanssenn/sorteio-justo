@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Users, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -17,6 +18,7 @@ export const RoundManager = () => {
   const [deletingRodada, setDeletingRodada] = useState(false);
   const [deletingAllRodadas, setDeletingAllRodadas] = useState(false);
   const [resettingVagas, setResettingVagas] = useState(false);
+  const [excluirEscolhas, setExcluirEscolhas] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -290,19 +292,28 @@ export const RoundManager = () => {
 
     try {
       const { data, error } = await supabase.rpc('resetar_vagas_ocupadas', {
-        escala_id_param: escalaId
+        escala_id_param: escalaId,
+        excluir_escolhas: excluirEscolhas
       });
 
       if (error) throw error;
 
-      const resultado = data as { atividades_resetadas: number };
+      const resultado = data as { atividades_resetadas: number; escolhas_excluidas: number };
 
-      toast({
-        title: "Vagas resetadas!",
-        description: `${resultado.atividades_resetadas} atividade(s) tiveram suas vagas ocupadas resetadas para 0.`,
-      });
+      if (excluirEscolhas) {
+        toast({
+          title: "Vagas resetadas e escolhas removidas!",
+          description: `${resultado.atividades_resetadas} atividade(s) resetadas e ${resultado.escolhas_excluidas} escolha(s) removidas.`,
+        });
+      } else {
+        toast({
+          title: "Vagas resetadas!",
+          description: `${resultado.atividades_resetadas} atividade(s) tiveram suas vagas ocupadas resetadas para 0.`,
+        });
+      }
 
       setResettingVagas(false);
+      setExcluirEscolhas(false);
     } catch (error: any) {
       toast({
         title: "Erro ao resetar vagas",
@@ -468,23 +479,37 @@ export const RoundManager = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={resettingVagas} onOpenChange={setResettingVagas}>
+      <AlertDialog open={resettingVagas} onOpenChange={(open) => {
+        setResettingVagas(open);
+        if (!open) setExcluirEscolhas(false);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Resetar Vagas Ocupadas</AlertDialogTitle>
             <AlertDialogDescription>
               Esta ação irá resetar todas as vagas ocupadas das atividades desta escala para 0.
-              {"\n\n"}
-              Use isto apenas para corrigir inconsistências nos dados. As escolhas dos participantes não serão afetadas.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="flex items-center space-x-2 p-4">
+            <Checkbox 
+              id="excluir-escolhas" 
+              checked={excluirEscolhas}
+              onCheckedChange={(checked) => setExcluirEscolhas(checked as boolean)}
+            />
+            <label
+              htmlFor="excluir-escolhas"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Também excluir todas as escolhas dos participantes (remove da visualização)
+            </label>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={resetarVagasOcupadas}
               className="bg-orange-500 text-white hover:bg-orange-600"
             >
-              Resetar Vagas
+              Resetar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

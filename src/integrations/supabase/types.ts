@@ -404,10 +404,12 @@ export type Database = {
         }
         Returns: boolean
       }
-      resetar_vagas_ocupadas: {
-        Args: { escala_id_param?: string }
-        Returns: Json
-      }
+      resetar_vagas_ocupadas:
+        | { Args: { escala_id_param?: string }; Returns: Json }
+        | {
+            Args: { escala_id_param?: string; excluir_escolhas?: boolean }
+            Returns: Json
+          }
     }
     Enums: {
       app_role: "admin" | "participante"
