@@ -70,7 +70,7 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
   const downloadTemplate = () => {
     const template = [
       {
-        escala_id: escalas[0]?.id || "UUID da escala",
+        escala_id: escalas[0]?.id || "Cole aqui o ID da escala",
         tipo: "Plantão",
         local: "Hospital Central",
         data: "25/12/2024",
@@ -81,14 +81,27 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       }
     ];
 
+    // Add a second sheet with available escalas
+    const escalasSheet = escalas.map(e => ({
+      id: e.id,
+      nome: e.nome,
+      periodo: `${e.periodo_inicio} a ${e.periodo_fim}`
+    }));
+
     const ws = XLSX.utils.json_to_sheet(template);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Atividades");
+    
+    if (escalasSheet.length > 0) {
+      const escalasWs = XLSX.utils.json_to_sheet(escalasSheet);
+      XLSX.utils.book_append_sheet(wb, escalasWs, "Escalas Disponíveis");
+    }
+    
     XLSX.writeFile(wb, "template_atividades.xlsx");
 
     toast({
       title: "Template baixado!",
-      description: "Preencha a planilha e faça o upload.",
+      description: "Veja a aba 'Escalas Disponíveis' para copiar o ID correto.",
     });
   };
 
@@ -110,9 +123,20 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
       const activities = jsonData.map((row: any) => {
-        // Convert DD/MM/YYYY to YYYY-MM-DD
-        const [day, month, year] = row.data.split('/');
-        const dataFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        // Handle different date formats (Excel can return dates as numbers or strings)
+        let dataFormatted: string;
+        
+        if (typeof row.data === 'number') {
+          // Excel date serial number
+          const date = XLSX.SSF.parse_date_code(row.data);
+          dataFormatted = `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
+        } else if (typeof row.data === 'string') {
+          // DD/MM/YYYY format
+          const [day, month, year] = row.data.split('/');
+          dataFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        } else {
+          throw new Error(`Formato de data inválido na linha com tipo "${row.tipo}"`);
+        }
 
         return {
           escala_id: row.escala_id,
@@ -383,9 +407,10 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
                 <p className="font-semibold">Instruções:</p>
                 <ol className="list-decimal list-inside space-y-1">
                   <li>Baixe o modelo de planilha</li>
+                  <li><strong>escala_id:</strong> Copie o ID da aba "Escalas Disponíveis"</li>
                   <li>Preencha com os dados das atividades no Excel</li>
                   <li>Tipos válidos: Plantão, Ambulatório, Enfermaria</li>
-                  <li>Formato de data: DD/MM/AAAA (ex: 25/12/2024)</li>
+                  <li>Formato de data: DD/MM/AAAA (ex: 25/12/2024) ou deixe o Excel formatar</li>
                   <li>Formato de horário: HH:MM (ex: 08:00)</li>
                   <li>Faça o upload do arquivo preenchido</li>
                 </ol>
