@@ -23,6 +23,7 @@ export type Database = {
           horario_fim: string
           horario_inicio: string
           id: string
+          local: string | null
           observacao: string | null
           tipo: string
           vagas_ocupadas: number | null
@@ -36,6 +37,7 @@ export type Database = {
           horario_fim: string
           horario_inicio: string
           id?: string
+          local?: string | null
           observacao?: string | null
           tipo: string
           vagas_ocupadas?: number | null
@@ -49,6 +51,7 @@ export type Database = {
           horario_fim?: string
           horario_inicio?: string
           id?: string
+          local?: string | null
           observacao?: string | null
           tipo?: string
           vagas_ocupadas?: number | null

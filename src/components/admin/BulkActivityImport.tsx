@@ -14,6 +14,7 @@ interface ActivityRow {
   id: string;
   escala_id: string;
   tipo: string;
+  local: string;
   data: string;
   horario_inicio: string;
   horario_fim: string;
@@ -47,6 +48,7 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       id: crypto.randomUUID(),
       escala_id: "",
       tipo: "",
+      local: "",
       data: "",
       horario_inicio: "",
       horario_fim: "",
@@ -70,7 +72,8 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       {
         escala_id: escalas[0]?.id || "UUID da escala",
         tipo: "Plantão",
-        data: "2024-12-25",
+        local: "Hospital Central",
+        data: "25/12/2024",
         horario_inicio: "08:00",
         horario_fim: "18:00",
         vagas_total: 1,
@@ -106,17 +109,24 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      const activities = jsonData.map((row: any) => ({
-        escala_id: row.escala_id,
-        tipo: row.tipo,
-        data: row.data,
-        horario_inicio: row.horario_inicio,
-        horario_fim: row.horario_fim,
-        vagas_total: parseInt(row.vagas_total),
-        observacao: row.observacao || null,
-        eh_fim_semana: isWeekend(row.data),
-        vagas_ocupadas: 0
-      }));
+      const activities = jsonData.map((row: any) => {
+        // Convert DD/MM/YYYY to YYYY-MM-DD
+        const [day, month, year] = row.data.split('/');
+        const dataFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+        return {
+          escala_id: row.escala_id,
+          tipo: row.tipo,
+          local: row.local || null,
+          data: dataFormatted,
+          horario_inicio: row.horario_inicio,
+          horario_fim: row.horario_fim,
+          vagas_total: parseInt(row.vagas_total),
+          observacao: row.observacao || null,
+          eh_fim_semana: isWeekend(dataFormatted),
+          vagas_ocupadas: 0
+        };
+      });
 
       const { error } = await supabase.from("atividades").insert(activities);
 
@@ -159,6 +169,7 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       const activities = validRows.map(row => ({
         escala_id: row.escala_id,
         tipo: row.tipo,
+        local: row.local || null,
         data: row.data,
         horario_inicio: row.horario_inicio,
         horario_fim: row.horario_fim,
@@ -216,6 +227,7 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
               <TableRow>
                 <TableHead className="w-[180px]">Escala</TableHead>
                 <TableHead className="w-[140px]">Tipo</TableHead>
+                <TableHead className="w-[140px]">Local</TableHead>
                 <TableHead className="w-[140px]">Data</TableHead>
                 <TableHead className="w-[100px]">Início</TableHead>
                 <TableHead className="w-[100px]">Fim</TableHead>
@@ -252,6 +264,15 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
                         <SelectItem value="Enfermaria">Enfermaria</SelectItem>
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="text"
+                      value={row.local}
+                      onChange={(e) => updateRow(row.id, 'local', e.target.value)}
+                      placeholder="Local..."
+                      className="h-8"
+                    />
                   </TableCell>
                   <TableCell>
                     <Input
@@ -364,7 +385,7 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
                   <li>Baixe o modelo de planilha</li>
                   <li>Preencha com os dados das atividades no Excel</li>
                   <li>Tipos válidos: Plantão, Ambulatório, Enfermaria</li>
-                  <li>Formato de data: AAAA-MM-DD (ex: 2024-12-25)</li>
+                  <li>Formato de data: DD/MM/AAAA (ex: 25/12/2024)</li>
                   <li>Formato de horário: HH:MM (ex: 08:00)</li>
                   <li>Faça o upload do arquivo preenchido</li>
                 </ol>

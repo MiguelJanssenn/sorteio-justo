@@ -16,6 +16,7 @@ interface Escolha {
   profiles: { nome_completo: string };
   atividades: {
     tipo: string;
+    local: string | null;
     data: string;
     horario_inicio: string;
     horario_fim: string;
@@ -50,6 +51,7 @@ export const ScaleView = () => {
           profiles!inner(nome_completo),
           atividades!inner(
             tipo,
+            local,
             data,
             horario_inicio,
             horario_fim,
@@ -212,6 +214,7 @@ export const ScaleView = () => {
                     <TableRow>
                       <TableHead>Participante</TableHead>
                       <TableHead>Tipo</TableHead>
+                      <TableHead>Local</TableHead>
                       <TableHead>Data</TableHead>
                       <TableHead>Horário</TableHead>
                       <TableHead>Escala</TableHead>
@@ -225,6 +228,7 @@ export const ScaleView = () => {
                           {escolha.profiles.nome_completo}
                         </TableCell>
                         <TableCell>{escolha.atividades.tipo}</TableCell>
+                        <TableCell>{escolha.atividades.local || "-"}</TableCell>
                         <TableCell>
                           {format(new Date(escolha.atividades.data + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}
                         </TableCell>
@@ -266,7 +270,10 @@ export const ScaleView = () => {
                           <div className="flex-1">
                             <div className="font-medium">{escolha.profiles.nome_completo}</div>
                             <div className="text-sm text-muted-foreground">
-                              {escolha.atividades.tipo} • {escolha.atividades.horario_inicio} - {escolha.atividades.horario_fim}
+                              {escolha.atividades.tipo}
+                              {escolha.atividades.local && ` • ${escolha.atividades.local}`}
+                              {" • "}
+                              {escolha.atividades.horario_inicio} - {escolha.atividades.horario_fim}
                             </div>
                             {escolha.atividades.observacao && (
                               <div className="text-sm text-muted-foreground mt-1">
