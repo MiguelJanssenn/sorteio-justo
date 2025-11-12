@@ -204,6 +204,20 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
 
       if (escolhaError) {
         console.error('Erro ao registrar escolha:', escolhaError);
+        
+        // Verificar se é erro de atividade lotada
+        if (escolhaError.message?.includes('lotada')) {
+          toast({
+            title: "Atividade lotada!",
+            description: "Esta atividade já está com todas as vagas preenchidas. Por favor, escolha outra.",
+            variant: "destructive",
+          });
+          setAtividadeSelecionada(null);
+          fetchRodadaAtual(); // Atualizar dados
+          setLoading(false);
+          return;
+        }
+        
         throw escolhaError;
       }
 
