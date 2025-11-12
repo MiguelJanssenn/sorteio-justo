@@ -121,10 +121,13 @@ export const RoundManager = () => {
 
       toast({
         title: "Rodada finalizada!",
-        description: "A rodada foi encerrada com sucesso.",
+        description: "A próxima rodada será criada automaticamente com novo sorteio.",
       });
 
-      setRodadaAtual(null);
+      // A próxima rodada será criada automaticamente pelo trigger
+      setTimeout(() => {
+        fetchRodadaAtual();
+      }, 1000);
     } catch (error: any) {
       toast({
         title: "Erro ao finalizar rodada",
@@ -144,7 +147,7 @@ export const RoundManager = () => {
           Gerenciar Rodadas
         </CardTitle>
         <CardDescription>
-          Inicie rodadas e sorteie a ordem de escolha dos participantes
+          As rodadas são criadas automaticamente com novo sorteio ao finalizar cada uma
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -199,8 +202,12 @@ export const RoundManager = () => {
               </div>
             </div>
 
+            <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+              ℹ️ Quando todos os participantes escolherem, clique em "Finalizar Rodada" e a próxima será criada automaticamente com novo sorteio.
+            </div>
+
             <Button onClick={finalizarRodada} disabled={loading} variant="destructive" className="w-full">
-              Finalizar Rodada
+              Finalizar Rodada e Sortear Próxima
             </Button>
           </div>
         ) : (

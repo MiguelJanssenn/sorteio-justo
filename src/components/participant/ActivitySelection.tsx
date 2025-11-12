@@ -52,7 +52,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
       .eq("finalizada", false)
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (!rodada) {
       setRodadaAtual(null);
@@ -71,7 +71,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
         .from("profiles")
         .select("nome_completo")
         .eq("id", ordemAtual)
-        .single();
+        .maybeSingle();
       
       setParticipanteAtual(profile);
     }
@@ -117,10 +117,17 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
 
       if (rodadaError) throw rodadaError;
 
-      toast({
-        title: "Escolha registrada!",
-        description: "Sua atividade foi registrada com sucesso.",
-      });
+      if (finalizada) {
+        toast({
+          title: "Escolha registrada!",
+          description: "Rodada finalizada! Aguarde a próxima rodada com novo sorteio.",
+        });
+      } else {
+        toast({
+          title: "Escolha registrada!",
+          description: "Sua atividade foi registrada com sucesso.",
+        });
+      }
 
       fetchRodadaAtual();
     } catch (error: any) {
