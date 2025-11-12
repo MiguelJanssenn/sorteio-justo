@@ -112,7 +112,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
       setParticipanteAtual(profile);
     }
 
-    // Buscar atividades disponíveis
+    // Buscar TODAS as atividades (incluindo as já ocupadas)
     const { data: atividadesData } = await supabase
       .from("atividades")
       .select("*")
@@ -121,7 +121,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
       .order("horario_inicio");
 
     if (atividadesData) {
-      setAtividades(atividadesData.filter(a => a.vagas_ocupadas < a.vagas_total));
+      setAtividades(atividadesData);
     }
   };
 
@@ -268,8 +268,8 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
         </Card>
       )}
 
-      {minhaVez && !jaEscolheu && (
-        <div className="space-y-4">
+      <div className="space-y-4">
+        {minhaVez && !jaEscolheu && (
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Escolha uma atividade:</h3>
             {atividadeSelecionada && (
@@ -293,76 +293,100 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
               </div>
             )}
           </div>
+        )}
 
-          <div className="space-y-2">
-            {atividades.map((atividade) => {
-              const isSelecionada = atividadeSelecionada === atividade.id;
-              return (
-                <Card 
-                  key={atividade.id} 
-                  className={`cursor-pointer transition-all ${
-                    isSelecionada 
-                      ? "border-primary border-2 bg-primary/5" 
-                      : "hover:border-primary/50"
-                  }`}
-                  onClick={() => setAtividadeSelecionada(atividade.id)}
-                >
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="flex gap-2">
-                          <Badge variant={
-                            atividade.tipo === "Plantão" ? "default" :
-                            atividade.tipo === "Ambulatório" ? "secondary" : "outline"
-                          } className="text-xs">
-                            {atividade.tipo}
+        {!minhaVez && !jaEscolheu && (
+          <div className="text-sm text-muted-foreground text-center py-2">
+            Visualizando atividades disponíveis
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {atividades.map((atividade) => {
+            const isSelecionada = atividadeSelecionada === atividade.id;
+            const vagasDisponiveis = atividade.vagas_ocupadas < atividade.vagas_total;
+            const podeSelecionar = minhaVez && !jaEscolheu && vagasDisponiveis;
+            
+            return (
+              <Card 
+                key={atividade.id} 
+                className={`transition-all ${
+                  !vagasDisponiveis 
+                    ? "opacity-50 cursor-not-allowed" 
+                    : podeSelecionar 
+                      ? "cursor-pointer" 
+                      : "cursor-default"
+                } ${
+                  isSelecionada 
+                    ? "border-primary border-2 bg-primary/5" 
+                    : podeSelecionar 
+                      ? "hover:border-primary/50" 
+                      : ""
+                }`}
+                onClick={() => podeSelecionar && setAtividadeSelecionada(atividade.id)}
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="flex gap-2">
+                        <Badge variant={
+                          atividade.tipo === "Plantão" ? "default" :
+                          atividade.tipo === "Ambulatório" ? "secondary" : "outline"
+                        } className="text-xs">
+                          {atividade.tipo}
+                        </Badge>
+                        {atividade.eh_fim_semana && (
+                          <Badge variant="destructive" className="text-xs">FDS</Badge>
+                        )}
+                        {!vagasDisponiveis && (
+                          <Badge variant="outline" className="text-xs bg-muted">
+                            Lotada
                           </Badge>
-                          {atividade.eh_fim_semana && (
-                            <Badge variant="destructive" className="text-xs">FDS</Badge>
-                          )}
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-3 text-xs flex-1">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {format(new Date(atividade.data + "T00:00:00"), "dd/MM", { locale: ptBR })}
                         </div>
-                        
-                        <div className="flex items-center gap-3 text-xs flex-1">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {format(new Date(atividade.data + "T00:00:00"), "dd/MM", { locale: ptBR })}
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {atividade.horario_inicio}-{atividade.horario_fim}
+                        </div>
+                        {atividade.local && (
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            📍 {atividade.local}
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {atividade.horario_inicio}-{atividade.horario_fim}
-                          </div>
-                          {atividade.local && (
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              📍 {atividade.local}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="w-3 h-3" />
-                          {atividade.vagas_ocupadas}/{atividade.vagas_total}
-                        </div>
+                        )}
                       </div>
 
-                      {isSelecionada && (
-                        <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
-                      )}
+                      <div className={`flex items-center gap-1 text-xs ${
+                        vagasDisponiveis ? "text-muted-foreground" : "text-destructive font-semibold"
+                      }`}>
+                        <Users className="w-3 h-3" />
+                        {atividade.vagas_ocupadas}/{atividade.vagas_total}
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
 
-          {atividades.length === 0 && (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                Nenhuma atividade disponível no momento
-              </CardContent>
-            </Card>
-          )}
+                    {isSelecionada && (
+                      <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
-      )}
+
+        {atividades.length === 0 && (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              Nenhuma atividade disponível no momento
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
