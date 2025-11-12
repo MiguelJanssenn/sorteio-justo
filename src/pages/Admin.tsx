@@ -105,11 +105,11 @@ const Admin = () => {
             <ScaleForm onSuccess={handleRefresh} />
           </TabsContent>
 
-          <TabsContent value="atividades" key={`atividades-${refreshKey}`}>
+          <TabsContent value="atividades" key={`atividades-${refreshKey}`} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <ActivityForm onSuccess={handleRefresh} />
-              <BulkActivityImport onSuccess={handleRefresh} />
             </div>
+            <BulkActivityImport onSuccess={handleRefresh} />
           </TabsContent>
 
           <TabsContent value="rodadas" key={`rodadas-${refreshKey}`}>

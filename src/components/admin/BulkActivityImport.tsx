@@ -1,37 +1,66 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Download, FileSpreadsheet } from "lucide-react";
-import * as XLSX from "xlsx";
+import { Plus, Trash2, Save, FileSpreadsheet } from "lucide-react";
+
+interface ActivityRow {
+  id: string;
+  escala_id: string;
+  tipo: string;
+  data: string;
+  horario_inicio: string;
+  horario_fim: string;
+  vagas_total: string;
+  observacao: string;
+}
 
 export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => {
+  const [escalas, setEscalas] = useState<any[]>([]);
+  const [rows, setRows] = useState<ActivityRow[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const downloadTemplate = () => {
-    const template = [
-      {
-        escala_id: "UUID da escala",
-        tipo: "Plantão/Ambulatório/Enfermaria",
-        data: "YYYY-MM-DD",
-        horario_inicio: "HH:MM",
-        horario_fim: "HH:MM",
-        vagas_total: 1,
-        observacao: "Observação (opcional)"
-      }
-    ];
+  useEffect(() => {
+    fetchEscalas();
+    addEmptyRow();
+  }, []);
 
-    const ws = XLSX.utils.json_to_sheet(template);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Atividades");
-    XLSX.writeFile(wb, "template_atividades.xlsx");
+  const fetchEscalas = async () => {
+    const { data } = await supabase
+      .from("escalas")
+      .select("*")
+      .eq("status", "ativa")
+      .order("created_at", { ascending: false });
+    
+    if (data) setEscalas(data);
+  };
 
-    toast({
-      title: "Template baixado!",
-      description: "Preencha a planilha e faça o upload.",
-    });
+  const addEmptyRow = () => {
+    setRows(prev => [...prev, {
+      id: crypto.randomUUID(),
+      escala_id: "",
+      tipo: "",
+      data: "",
+      horario_inicio: "",
+      horario_fim: "",
+      vagas_total: "1",
+      observacao: ""
+    }]);
+  };
+
+  const updateRow = (id: string, field: keyof ActivityRow, value: string) => {
+    setRows(prev => prev.map(row => 
+      row.id === id ? { ...row, [field]: value } : row
+    ));
+  };
+
+  const removeRow = (id: string) => {
+    setRows(prev => prev.filter(row => row.id !== id));
   };
 
   const isWeekend = (dateString: string) => {
@@ -40,18 +69,23 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
     return day === 0 || day === 6;
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleSave = async () => {
+    const validRows = rows.filter(row => 
+      row.escala_id && row.tipo && row.data && row.horario_inicio && row.horario_fim
+    );
+
+    if (validRows.length === 0) {
+      toast({
+        title: "Nenhuma atividade para salvar",
+        description: "Preencha pelo menos uma linha completa.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
     try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-      const activities = jsonData.map((row: any) => ({
+      const activities = validRows.map(row => ({
         escala_id: row.escala_id,
         tipo: row.tipo,
         data: row.data,
@@ -68,15 +102,16 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
       if (error) throw error;
 
       toast({
-        title: "Atividades importadas!",
-        description: `${activities.length} atividades foram adicionadas com sucesso.`,
+        title: "Atividades salvas!",
+        description: `${activities.length} atividade(s) adicionada(s) com sucesso.`,
       });
 
+      setRows([]);
+      addEmptyRow();
       onSuccess();
-      e.target.value = "";
     } catch (error: any) {
       toast({
-        title: "Erro ao importar",
+        title: "Erro ao salvar",
         description: error.message,
         variant: "destructive",
       });
@@ -86,60 +121,127 @@ export const BulkActivityImport = ({ onSuccess }: { onSuccess: () => void }) => 
   };
 
   return (
-    <Card>
+    <Card className="col-span-2">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileSpreadsheet className="w-5 h-5" />
-          Importação em Massa
+          Cadastro em Massa
         </CardTitle>
         <CardDescription>
-          Importe múltiplas atividades de uma planilha Excel
+          Adicione múltiplas atividades de forma rápida usando a planilha editável
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-col gap-3">
-          <Button
-            variant="outline"
-            onClick={downloadTemplate}
-            className="w-full"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Baixar Modelo de Planilha
-          </Button>
-
-          <div className="relative">
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileUpload}
-              disabled={loading}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              id="file-upload"
-            />
-            <Button
-              variant="default"
-              disabled={loading}
-              className="w-full"
-              asChild
-            >
-              <label htmlFor="file-upload" className="cursor-pointer">
-                <Upload className="w-4 h-4 mr-2" />
-                {loading ? "Importando..." : "Fazer Upload da Planilha"}
-              </label>
-            </Button>
-          </div>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[180px]">Escala</TableHead>
+                <TableHead className="w-[140px]">Tipo</TableHead>
+                <TableHead className="w-[140px]">Data</TableHead>
+                <TableHead className="w-[100px]">Início</TableHead>
+                <TableHead className="w-[100px]">Fim</TableHead>
+                <TableHead className="w-[80px]">Vagas</TableHead>
+                <TableHead className="min-w-[200px]">Observação</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell>
+                    <Select value={row.escala_id} onValueChange={(value) => updateRow(row.id, 'escala_id', value)}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {escalas.map((escala) => (
+                          <SelectItem key={escala.id} value={escala.id}>
+                            {escala.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Select value={row.tipo} onValueChange={(value) => updateRow(row.id, 'tipo', value)}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue placeholder="Tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Plantão">Plantão</SelectItem>
+                        <SelectItem value="Ambulatório">Ambulatório</SelectItem>
+                        <SelectItem value="Enfermaria">Enfermaria</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="date"
+                      value={row.data}
+                      onChange={(e) => updateRow(row.id, 'data', e.target.value)}
+                      className="h-8"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="time"
+                      value={row.horario_inicio}
+                      onChange={(e) => updateRow(row.id, 'horario_inicio', e.target.value)}
+                      className="h-8"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="time"
+                      value={row.horario_fim}
+                      onChange={(e) => updateRow(row.id, 'horario_fim', e.target.value)}
+                      className="h-8"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={row.vagas_total}
+                      onChange={(e) => updateRow(row.id, 'vagas_total', e.target.value)}
+                      className="h-8"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="text"
+                      value={row.observacao}
+                      onChange={(e) => updateRow(row.id, 'observacao', e.target.value)}
+                      placeholder="Observação..."
+                      className="h-8"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeRow(row.id)}
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
 
-        <div className="text-sm text-muted-foreground space-y-1">
-          <p className="font-semibold">Instruções:</p>
-          <ol className="list-decimal list-inside space-y-1">
-            <li>Baixe o modelo de planilha</li>
-            <li>Preencha com os dados das atividades</li>
-            <li>Tipos válidos: Plantão, Ambulatório, Enfermaria</li>
-            <li>Formato de data: AAAA-MM-DD (ex: 2024-12-25)</li>
-            <li>Formato de horário: HH:MM (ex: 08:00)</li>
-            <li>Faça o upload do arquivo preenchido</li>
-          </ol>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={addEmptyRow} disabled={loading}>
+            <Plus className="w-4 h-4 mr-2" />
+            Adicionar Linha
+          </Button>
+          <Button onClick={handleSave} disabled={loading}>
+            <Save className="w-4 h-4 mr-2" />
+            {loading ? "Salvando..." : "Salvar Todas"}
+          </Button>
         </div>
       </CardContent>
     </Card>
