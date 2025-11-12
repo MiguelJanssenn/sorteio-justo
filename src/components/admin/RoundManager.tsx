@@ -263,36 +263,27 @@ export const RoundManager = () => {
         return;
       }
 
-      // Verificar se há escolhas em alguma rodada
       const rodadaIds = todasRodadas.map(r => r.id);
-      const { data: escolhas } = await supabase
-        .from("escolhas")
-        .select("id")
-        .in("rodada_id", rodadaIds)
-        .limit(1);
 
-      if (escolhas && escolhas.length > 0) {
-        toast({
-          title: "Não é possível excluir",
-          description: "Existem rodadas com escolhas registradas. Exclua as escolhas primeiro.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        setDeletingAllRodadas(false);
-        return;
-      }
+      // Excluir todas as escolhas dessas rodadas primeiro
+      const { error: escolhasError } = await supabase
+        .from("escolhas")
+        .delete()
+        .in("rodada_id", rodadaIds);
+
+      if (escolhasError) throw escolhasError;
 
       // Excluir todas as rodadas
-      const { error } = await supabase
+      const { error: rodadasError } = await supabase
         .from("rodadas")
         .delete()
         .eq("escala_id", escalaId);
 
-      if (error) throw error;
+      if (rodadasError) throw rodadasError;
 
       toast({
         title: "Rodadas excluídas!",
-        description: `${todasRodadas.length} rodada(s) foram removidas com sucesso.`,
+        description: `${todasRodadas.length} rodada(s) e suas escolhas foram removidas com sucesso.`,
       });
 
       setDeletingAllRodadas(false);
@@ -437,7 +428,7 @@ export const RoundManager = () => {
             <AlertDialogDescription>
               Tem certeza que deseja excluir TODAS as rodadas desta escala? Esta ação não pode ser desfeita.
               {"\n\n"}
-              Nota: Só é possível excluir rodadas sem escolhas registradas.
+              Todas as escolhas registradas nessas rodadas também serão excluídas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
