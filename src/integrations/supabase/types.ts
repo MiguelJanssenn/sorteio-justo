@@ -67,6 +67,27 @@ export type Database = {
           },
         ]
       }
+      emails_autorizados: {
+        Row: {
+          adicionado_por: string | null
+          created_at: string | null
+          email: string
+          id: string
+        }
+        Insert: {
+          adicionado_por?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+        }
+        Update: {
+          adicionado_por?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       escalas: {
         Row: {
           created_at: string | null
@@ -147,6 +168,38 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participacao_escalas: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          escala_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          escala_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          escala_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participacao_escalas_escala_id_fkey"
+            columns: ["escala_id"]
+            isOneToOne: false
+            referencedRelation: "escalas"
             referencedColumns: ["id"]
           },
         ]
@@ -335,6 +388,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      email_autorizado: { Args: { email_check: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
