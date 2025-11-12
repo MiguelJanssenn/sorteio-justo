@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Users } from "lucide-react";
+import { RefreshCw, Users, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export const RoundManager = () => {
   const [escalas, setEscalas] = useState<any[]>([]);
@@ -13,6 +14,7 @@ export const RoundManager = () => {
   const [participantes, setParticipantes] = useState<any[]>([]);
   const [rodadaAtual, setRodadaAtual] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [deletingRodada, setDeletingRodada] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -37,9 +39,20 @@ export const RoundManager = () => {
   };
 
   const fetchParticipantes = async () => {
+    // Buscar apenas participantes (excluir admins)
+    const { data: participantesRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "participante");
+
+    if (!participantesRoles) return;
+
+    const participanteIds = participantesRoles.map(r => r.user_id);
+
     const { data } = await supabase
       .from("profiles")
       .select("id, nome_completo")
+      .in("id", participanteIds)
       .order("nome_completo");
     
     if (data) setParticipantes(data);
@@ -139,84 +152,163 @@ export const RoundManager = () => {
     }
   };
 
+  const excluirRodada = async () => {
+    if (!rodadaAtual) return;
+    setLoading(true);
+
+    try {
+      // Verificar se há escolhas nesta rodada
+      const { data: escolhas } = await supabase
+        .from("escolhas")
+        .select("id")
+        .eq("rodada_id", rodadaAtual.id)
+        .limit(1);
+
+      if (escolhas && escolhas.length > 0) {
+        toast({
+          title: "Não é possível excluir",
+          description: "Esta rodada já possui escolhas registradas.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        setDeletingRodada(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("rodadas")
+        .delete()
+        .eq("id", rodadaAtual.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Rodada excluída!",
+        description: "A rodada foi removida com sucesso.",
+      });
+
+      setDeletingRodada(false);
+      setRodadaAtual(null);
+      fetchRodadaAtual();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir rodada",
+        description: error.message,
+        variant: "destructive",
+      });
+      setDeletingRodada(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <RefreshCw className="w-5 h-5" />
-          Gerenciar Rodadas
-        </CardTitle>
-        <CardDescription>
-          As rodadas são criadas automaticamente com novo sorteio ao finalizar cada uma
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <label className="text-sm font-medium mb-2 block">Escala</label>
-          <Select value={escalaId} onValueChange={setEscalaId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a escala" />
-            </SelectTrigger>
-            <SelectContent>
-              {escalas.map((escala) => (
-                <SelectItem key={escala.id} value={escala.id}>
-                  {escala.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {rodadaAtual ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div>
-                <div className="text-sm text-muted-foreground">Rodada Atual</div>
-                <div className="text-2xl font-bold">Rodada {rodadaAtual.numero}</div>
-              </div>
-              <Badge variant="secondary">Em andamento</Badge>
-            </div>
-
-            <div>
-              <div className="text-sm font-medium mb-2 flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Ordem Sorteada
-              </div>
-              <div className="space-y-2">
-                {rodadaAtual.ordem_sorteada.map((userId: string, index: number) => {
-                  const participante = participantes.find(p => p.id === userId);
-                  const isAtual = index === rodadaAtual.indice_atual;
-                  return (
-                    <div
-                      key={userId}
-                      className={`flex items-center gap-3 p-3 rounded-lg ${
-                        isAtual ? "bg-primary/10 border border-primary" : "bg-muted"
-                      }`}
-                    >
-                      <div className="font-bold text-lg w-8">{index + 1}º</div>
-                      <div className="flex-1">{participante?.nome_completo}</div>
-                      {isAtual && <Badge>Vez atual</Badge>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-              ℹ️ Quando todos os participantes escolherem, clique em "Finalizar Rodada" e a próxima será criada automaticamente com novo sorteio.
-            </div>
-
-            <Button onClick={finalizarRodada} disabled={loading} variant="destructive" className="w-full">
-              Finalizar Rodada e Sortear Próxima
-            </Button>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <RefreshCw className="w-5 h-5" />
+            Gerenciar Rodadas
+          </CardTitle>
+          <CardDescription>
+            As rodadas são criadas automaticamente com novo sorteio ao finalizar cada uma
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Escala</label>
+            <Select value={escalaId} onValueChange={setEscalaId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a escala" />
+              </SelectTrigger>
+              <SelectContent>
+                {escalas.map((escala) => (
+                  <SelectItem key={escala.id} value={escala.id}>
+                    {escala.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        ) : (
-          <Button onClick={iniciarNovaRodada} disabled={loading || !escalaId} className="w-full">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Iniciar Nova Rodada
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+
+          {rodadaAtual ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div>
+                  <div className="text-sm text-muted-foreground">Rodada Atual</div>
+                  <div className="text-2xl font-bold">Rodada {rodadaAtual.numero}</div>
+                </div>
+                <Badge variant="secondary">Em andamento</Badge>
+              </div>
+
+              <div>
+                <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Ordem Sorteada
+                </div>
+                <div className="space-y-2">
+                  {rodadaAtual.ordem_sorteada.map((userId: string, index: number) => {
+                    const participante = participantes.find(p => p.id === userId);
+                    const isAtual = index === rodadaAtual.indice_atual;
+                    return (
+                      <div
+                        key={userId}
+                        className={`flex items-center gap-3 p-3 rounded-lg ${
+                          isAtual ? "bg-primary/10 border border-primary" : "bg-muted"
+                        }`}
+                      >
+                        <div className="font-bold text-lg w-8">{index + 1}º</div>
+                        <div className="flex-1">{participante?.nome_completo}</div>
+                        {isAtual && <Badge>Vez atual</Badge>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+                ℹ️ Quando todos os participantes escolherem, clique em "Finalizar Rodada" e a próxima será criada automaticamente com novo sorteio.
+              </div>
+
+              <div className="flex gap-2">
+                <Button onClick={finalizarRodada} disabled={loading} variant="destructive" className="flex-1">
+                  Finalizar Rodada e Sortear Próxima
+                </Button>
+                <Button onClick={() => setDeletingRodada(true)} disabled={loading} variant="outline" size="icon">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button onClick={iniciarNovaRodada} disabled={loading || !escalaId} className="w-full">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Iniciar Nova Rodada
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={deletingRodada} onOpenChange={setDeletingRodada}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Rodada</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a rodada {rodadaAtual?.numero}? Esta ação não pode ser desfeita.
+              {"\n\n"}
+              Nota: Só é possível excluir rodadas sem escolhas registradas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={excluirRodada}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
