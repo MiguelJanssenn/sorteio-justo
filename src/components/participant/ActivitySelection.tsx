@@ -27,6 +27,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   const [atividadeSelecionada, setAtividadeSelecionada] = useState<string | null>(null);
   const [jaEscolheu, setJaEscolheu] = useState(false);
   const [escolhasPorAtividade, setEscolhasPorAtividade] = useState<Record<string, any[]>>({});
+  const [ordemTipos, setOrdemTipos] = useState<string[] | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -87,6 +88,24 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
 
     setRodadaAtual(rodada);
 
+    // Buscar regra de ordem por tipo
+    const { data: regraOrdem } = await supabase
+      .from("regras")
+      .select("*")
+      .eq("escala_id", rodada.escala_id)
+      .eq("tipo_regra", "ordem_por_tipo")
+      .eq("ativa", true)
+      .maybeSingle();
+
+    let ordemTiposAtual: string[] | null = null;
+    if (regraOrdem && regraOrdem.configuracao) {
+      const config = regraOrdem.configuracao as any;
+      if (config.ordem && Array.isArray(config.ordem)) {
+        ordemTiposAtual = config.ordem;
+        setOrdemTipos(config.ordem);
+      }
+    }
+
     // Verificar se já escolheu nesta rodada
     const { data: escolhaExistente } = await supabase
       .from("escolhas")
@@ -123,12 +142,42 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
     const { data: atividadesData } = await supabase
       .from("atividades")
       .select("*")
-      .eq("escala_id", rodada.escala_id)
-      .order("data")
-      .order("horario_inicio");
+      .eq("escala_id", rodada.escala_id);
 
     if (atividadesData) {
-      setAtividades(atividadesData);
+      // Ordenar atividades
+      let atividadesOrdenadas = [...atividadesData];
+      
+      if (ordemTiposAtual && ordemTiposAtual.length > 0) {
+        // Se há regra de ordem por tipo, ordenar por tipo primeiro, depois por data/horário
+        atividadesOrdenadas.sort((a, b) => {
+          const indexA = ordemTiposAtual.indexOf(a.tipo);
+          const indexB = ordemTiposAtual.indexOf(b.tipo);
+          
+          // Se os tipos são diferentes, ordenar pela ordem configurada
+          if (indexA !== indexB) {
+            // Se um tipo não está na lista, colocar no final
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+          }
+          
+          // Se são do mesmo tipo, ordenar por data e horário
+          const dataCompare = a.data.localeCompare(b.data);
+          if (dataCompare !== 0) return dataCompare;
+          
+          return a.horario_inicio.localeCompare(b.horario_inicio);
+        });
+      } else {
+        // Ordenação padrão: por data e horário
+        atividadesOrdenadas.sort((a, b) => {
+          const dataCompare = a.data.localeCompare(b.data);
+          if (dataCompare !== 0) return dataCompare;
+          return a.horario_inicio.localeCompare(b.horario_inicio);
+        });
+      }
+      
+      setAtividades(atividadesOrdenadas);
       
       // Buscar TODAS as escolhas da escala (todas as rodadas)
       const { data: escolhasData } = await supabase
