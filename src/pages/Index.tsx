@@ -12,6 +12,9 @@ import { ActivitySelection } from "@/components/participant/ActivitySelection";
 import { ParticipacaoEscala } from "@/components/participant/ParticipacaoEscala";
 import { VezAtual } from "@/components/participant/VezAtual";
 import { RodadaStatus } from "@/components/participant/RodadaStatus";
+import { EscalaAtivaCard } from "@/components/participant/EscalaAtivaCard";
+import { MinhasAtividades } from "@/components/participant/MinhasAtividades";
+import { RodadaAtualCard } from "@/components/participant/RodadaAtualCard";
 
 const Index = () => {
   const [user, setUser] = useState<any>(null);
@@ -106,38 +109,9 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="grid gap-6 md:grid-cols-3 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Escala Ativa</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Janeiro 2025</div>
-              <p className="text-xs text-muted-foreground">01/01 - 31/01</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Minhas Atividades</CardTitle>
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">atividades selecionadas</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Rodada Atual</CardTitle>
-              <RefreshCw className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Aguardando início</p>
-            </CardContent>
-          </Card>
+          <EscalaAtivaCard />
+          <MinhasAtividades />
+          <RodadaAtualCard />
         </div>
 
         <Tabs defaultValue="participacao" className="space-y-4">
