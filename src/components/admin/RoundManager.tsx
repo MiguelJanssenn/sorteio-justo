@@ -19,6 +19,7 @@ export const RoundManager = () => {
   const [deletingAllRodadas, setDeletingAllRodadas] = useState(false);
   const [resettingVagas, setResettingVagas] = useState(false);
   const [excluirEscolhas, setExcluirEscolhas] = useState(false);
+  const [finalizandoEscolhas, setFinalizandoEscolhas] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -326,6 +327,46 @@ export const RoundManager = () => {
     }
   };
 
+  const finalizarEscolhas = async () => {
+    if (!escalaId) return;
+    setLoading(true);
+
+    try {
+      // Marcar a escala como finalizada
+      const { error } = await supabase
+        .from("escalas")
+        .update({ status: "finalizada" })
+        .eq("id", escalaId);
+
+      if (error) throw error;
+
+      // Se houver rodada ativa, finalizá-la também
+      if (rodadaAtual) {
+        await supabase
+          .from("rodadas")
+          .update({ finalizada: true })
+          .eq("id", rodadaAtual.id);
+      }
+
+      toast({
+        title: "Escolhas finalizadas!",
+        description: "A escala foi marcada como finalizada. Não será possível fazer novas escolhas.",
+      });
+
+      setEscalaId("");
+      setRodadaAtual(null);
+      fetchEscalas();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao finalizar escolhas",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <Card>
@@ -357,6 +398,14 @@ export const RoundManager = () => {
 
         {escalaId && (
           <div className="space-y-2">
+            <Button 
+              onClick={() => setFinalizandoEscolhas(true)} 
+              disabled={loading} 
+              variant="default"
+              className="w-full"
+            >
+              Finalizar Escolha de Atividades
+            </Button>
             <Button 
               onClick={() => setResettingVagas(true)} 
               disabled={loading} 
@@ -474,6 +523,25 @@ export const RoundManager = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir Todas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={finalizandoEscolhas} onOpenChange={setFinalizandoEscolhas}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar Escolha de Atividades</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja finalizar a escolha de atividades desta escala?
+              {"\n\n"}
+              A escala será marcada como finalizada e não será mais possível fazer novas escolhas ou criar rodadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={finalizarEscolhas}>
+              Finalizar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
