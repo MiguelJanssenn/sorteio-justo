@@ -42,7 +42,7 @@ export const RoundManager = () => {
   const fetchParticipantes = async () => {
     if (!escalaId) return;
 
-    // Buscar apenas participantes ativos nesta escala (excluir admins)
+    // Buscar participantes ativos nesta escala
     const { data: participantesAtivos } = await supabase
       .from("participacao_escalas" as any)
       .select("user_id")
@@ -56,19 +56,27 @@ export const RoundManager = () => {
 
     const participanteIds = participantesAtivos.map((p: any) => p.user_id);
 
-    // Verificar que são participantes (não admins)
-    const { data: roles } = await supabase
+    // Buscar roles de todos os usuários
+    const { data: allRoles } = await supabase
       .from("user_roles")
-      .select("user_id")
-      .eq("role", "participante")
+      .select("user_id, role")
       .in("user_id", participanteIds);
 
-    if (!roles || roles.length === 0) {
+    if (!allRoles || allRoles.length === 0) {
       setParticipantes([]);
       return;
     }
 
-    const participanteValidoIds = roles.map(r => r.user_id);
+    // Filtrar apenas quem tem role 'participante' E NÃO tem role 'admin'
+    const adminIds = allRoles.filter(r => r.role === "admin").map(r => r.user_id);
+    const participanteValidoIds = participanteIds.filter(
+      id => !adminIds.includes(id) && allRoles.some(r => r.user_id === id && r.role === "participante")
+    );
+
+    if (participanteValidoIds.length === 0) {
+      setParticipantes([]);
+      return;
+    }
 
     const { data } = await supabase
       .from("profiles")
