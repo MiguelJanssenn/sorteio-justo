@@ -354,7 +354,9 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
         )}
 
         <div className="space-y-2">
-          {atividades.map((atividade) => {
+          {atividades
+            .filter((atividade) => atividade.vagas_ocupadas < atividade.vagas_total)
+            .map((atividade) => {
             const isSelecionada = atividadeSelecionada === atividade.id;
             const vagasDisponiveis = atividade.vagas_ocupadas < atividade.vagas_total;
             const escolhasDestaAtividade = escolhasPorAtividade[atividade.id] || [];
@@ -467,10 +469,13 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
           })}
         </div>
 
-        {atividades.length === 0 && (
+        {atividades.filter((a) => a.vagas_ocupadas < a.vagas_total).length === 0 && (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
-              Nenhuma atividade disponível no momento
+              {atividades.length === 0 
+                ? "Nenhuma atividade cadastrada para esta escala"
+                : "Todas as atividades já estão com vagas completas"
+              }
             </CardContent>
           </Card>
         )}
