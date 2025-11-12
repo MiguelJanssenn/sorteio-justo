@@ -18,6 +18,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   const [minhaVez, setMinhaVez] = useState(false);
   const [loading, setLoading] = useState(false);
   const [participanteAtual, setParticipanteAtual] = useState<any>(null);
+  const [atividadeSelecionada, setAtividadeSelecionada] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -89,8 +90,8 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
     }
   };
 
-  const escolherAtividade = async (atividadeId: string) => {
-    if (!minhaVez || !rodadaAtual) return;
+  const confirmarEscolha = async () => {
+    if (!minhaVez || !rodadaAtual || !atividadeSelecionada) return;
     setLoading(true);
 
     try {
@@ -98,7 +99,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
       const { error: escolhaError } = await supabase.from("escolhas").insert({
         rodada_id: rodadaAtual.id,
         user_id: userId,
-        atividade_id: atividadeId
+        atividade_id: atividadeSelecionada
       });
 
       if (escolhaError) throw escolhaError;
@@ -129,6 +130,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
         });
       }
 
+      setAtividadeSelecionada(null);
       fetchRodadaAtual();
     } catch (error: any) {
       toast({
@@ -181,54 +183,90 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
       </Card>
 
       {minhaVez && (
-        <div className="space-y-3">
-          <h3 className="font-semibold">Escolha uma atividade:</h3>
-          {atividades.map((atividade) => (
-            <Card key={atividade.id} className="hover:border-primary transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={
-                        atividade.tipo === "Plantão" ? "default" :
-                        atividade.tipo === "Ambulatório" ? "secondary" : "outline"
-                      }>
-                        {atividade.tipo}
-                      </Badge>
-                      {atividade.eh_fim_semana && (
-                        <Badge variant="destructive">Fim de Semana</Badge>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Escolha uma atividade:</h3>
+            {atividadeSelecionada && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setAtividadeSelecionada(null)}
+                  variant="outline"
+                  size="sm"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={confirmarEscolha}
+                  disabled={loading}
+                  size="sm"
+                  className="bg-primary"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Confirmar Escolha
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            {atividades.map((atividade) => {
+              const isSelecionada = atividadeSelecionada === atividade.id;
+              return (
+                <Card 
+                  key={atividade.id} 
+                  className={`cursor-pointer transition-all ${
+                    isSelecionada 
+                      ? "border-primary border-2 bg-primary/5" 
+                      : "hover:border-primary/50"
+                  }`}
+                  onClick={() => setAtividadeSelecionada(atividade.id)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="flex gap-2">
+                          <Badge variant={
+                            atividade.tipo === "Plantão" ? "default" :
+                            atividade.tipo === "Ambulatório" ? "secondary" : "outline"
+                          } className="text-xs">
+                            {atividade.tipo}
+                          </Badge>
+                          {atividade.eh_fim_semana && (
+                            <Badge variant="destructive" className="text-xs">FDS</Badge>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-3 text-xs flex-1">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {format(new Date(atividade.data + "T00:00:00"), "dd/MM", { locale: ptBR })}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {atividade.horario_inicio}-{atividade.horario_fim}
+                          </div>
+                          {atividade.local && (
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              📍 {atividade.local}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Users className="w-3 h-3" />
+                          {atividade.vagas_ocupadas}/{atividade.vagas_total}
+                        </div>
+                      </div>
+
+                      {isSelecionada && (
+                        <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
                       )}
                     </div>
-                    
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {format(new Date(atividade.data + "T00:00:00"), "dd/MM/yyyy (EEEE)", { locale: ptBR })}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {atividade.horario_inicio} - {atividade.horario_fim}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      {atividade.vagas_ocupadas}/{atividade.vagas_total} vagas ocupadas
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={() => escolherAtividade(atividade.id)}
-                    disabled={loading}
-                    size="sm"
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Escolher
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
 
           {atividades.length === 0 && (
             <Card>
