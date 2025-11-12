@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Settings } from "lucide-react";
+import { Settings, ArrowUp, ArrowDown } from "lucide-react";
 
 export const RulesConfig = () => {
   const [escalas, setEscalas] = useState<any[]>([]);
@@ -22,6 +22,8 @@ export const RulesConfig = () => {
   const [minAtividades, setMinAtividades] = useState("0");
   const [maxAtividades, setMaxAtividades] = useState("0");
   const [preenchimentoSequencial, setPreenchimentoSequencial] = useState(false);
+  const [ordemPorTipo, setOrdemPorTipo] = useState(false);
+  const [tiposOrdenados, setTiposOrdenados] = useState<string[]>(["Plantão", "Bloco", "Enfermaria", "Ambulatório"]);
 
   useEffect(() => {
     fetchEscalas();
@@ -63,6 +65,12 @@ export const RulesConfig = () => {
           setMaxAtividades(config?.max?.toString() || "0");
         } else if (regra.tipo_regra === "preenchimento_sequencial") {
           setPreenchimentoSequencial(regra.ativa);
+        } else if (regra.tipo_regra === "ordem_por_tipo") {
+          setOrdemPorTipo(regra.ativa);
+          const config = regra.configuracao as any;
+          if (config?.ordem && Array.isArray(config.ordem)) {
+            setTiposOrdenados(config.ordem);
+          }
         }
       });
     }
@@ -98,6 +106,14 @@ export const RulesConfig = () => {
           tipo_regra: "preenchimento_sequencial",
           ativa: preenchimentoSequencial,
           configuracao: {}
+        },
+        {
+          escala_id: escalaId,
+          tipo_regra: "ordem_por_tipo",
+          ativa: ordemPorTipo,
+          configuracao: {
+            ordem: tiposOrdenados
+          }
         }
       ];
 
@@ -118,6 +134,16 @@ export const RulesConfig = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const moverTipo = (index: number, direcao: 'cima' | 'baixo') => {
+    const novostipos = [...tiposOrdenados];
+    const novoIndex = direcao === 'cima' ? index - 1 : index + 1;
+    
+    if (novoIndex < 0 || novoIndex >= novostipos.length) return;
+    
+    [novostipos[index], novostipos[novoIndex]] = [novostipos[novoIndex], novostipos[index]];
+    setTiposOrdenados(novostipos);
   };
 
   return (
@@ -210,6 +236,68 @@ export const RulesConfig = () => {
               checked={preenchimentoSequencial}
               onCheckedChange={setPreenchimentoSequencial}
             />
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center gap-3">
+                  <Label>Ordem de Escolha por Tipo</Label>
+                  <Switch
+                    checked={ordemPorTipo}
+                    onCheckedChange={setOrdemPorTipo}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Define uma sequência obrigatória: primeiro todos escolhem um tipo, depois outro
+                </p>
+              </div>
+            </div>
+            
+            {ordemPorTipo && (
+              <div className="border rounded-lg p-4 space-y-2 bg-muted/30">
+                <Label className="text-sm font-medium">Ordem dos Tipos</Label>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Defina a ordem em que os tipos devem ser escolhidos (primeiro no topo)
+                </p>
+                <div className="space-y-2">
+                  {tiposOrdenados.map((tipo, index) => (
+                    <div key={tipo} className="flex items-center justify-between bg-background p-3 rounded-md border">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {index + 1}º
+                        </span>
+                        <span className="font-medium">{tipo}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => moverTipo(index, 'cima')}
+                          disabled={index === 0}
+                          className="h-8 w-8"
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => moverTipo(index, 'baixo')}
+                          disabled={index === tiposOrdenados.length - 1}
+                          className="h-8 w-8"
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground pt-2">
+                  Exemplo: Se a ordem for "Ambulatório → Bloco → Enfermaria → Plantão", 
+                  todos devem escolher primeiro Ambulatório antes que alguém possa escolher Bloco.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
