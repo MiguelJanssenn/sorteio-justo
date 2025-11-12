@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PromoteAdminButton } from "@/components/PromoteAdminButton";
 import { ActivitySelection } from "@/components/participant/ActivitySelection";
 import { ParticipacaoEscala } from "@/components/participant/ParticipacaoEscala";
+import { VezAtual } from "@/components/participant/VezAtual";
 
 const Index = () => {
   const [user, setUser] = useState<any>(null);
@@ -147,10 +148,12 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="participacao" className="space-y-4">
+            <VezAtual />
             <ParticipacaoEscala />
           </TabsContent>
 
           <TabsContent value="escolher" className="space-y-4">
+            <VezAtual />
             {user && <ActivitySelection userId={user.id} />}
           </TabsContent>
 
