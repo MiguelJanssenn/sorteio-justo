@@ -2,42 +2,65 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar, Users, Settings as SettingsIcon, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { LogOut, ArrowLeft } from "lucide-react";
+import { ScaleForm } from "@/components/admin/ScaleForm";
+import { ActivityForm } from "@/components/admin/ActivityForm";
+import { RoundManager } from "@/components/admin/RoundManager";
+import { RulesConfig } from "@/components/admin/RulesConfig";
 
 const Admin = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
+    checkAdminAccess();
+  }, []);
 
-      const { data: rolesData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id);
+  const checkAdminAccess = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
 
-      const hasAdminRole = rolesData?.some(r => r.role === "admin");
-      
-      if (!hasAdminRole) {
-        navigate("/");
-        return;
-      }
+    const { data: rolesData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id);
 
-      setIsAdmin(true);
-      setLoading(false);
-    };
+    const hasAdminRole = rolesData?.some(r => r.role === "admin");
+    
+    if (!hasAdminRole) {
+      toast({
+        title: "Acesso negado",
+        description: "Você não tem permissão para acessar esta área.",
+        variant: "destructive",
+      });
+      navigate("/");
+      return;
+    }
 
-    checkAdmin();
-  }, [navigate]);
+    setIsAdmin(true);
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Logout realizado",
+      description: "Até logo!",
+    });
+  };
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   if (loading) {
     return (
@@ -54,123 +77,43 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card shadow-sm">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+              <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Painel Administrativo</h1>
-              <p className="text-sm text-muted-foreground">Gerencie escalas, atividades e participantes</p>
-            </div>
+            <h1 className="text-2xl font-bold text-foreground">Painel Administrativo</h1>
           </div>
+          <Button variant="ghost" onClick={handleLogout}>
+            <LogOut className="w-4 h-4 mr-2" />
+            Sair
+          </Button>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="escalas" className="space-y-4">
-          <TabsList>
+        <Tabs defaultValue="escalas" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="escalas">Escalas</TabsTrigger>
             <TabsTrigger value="atividades">Atividades</TabsTrigger>
-            <TabsTrigger value="participantes">Participantes</TabsTrigger>
+            <TabsTrigger value="rodadas">Rodadas</TabsTrigger>
             <TabsTrigger value="regras">Regras</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="escalas" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Gerenciar Escalas</CardTitle>
-                    <CardDescription>
-                      Crie e gerencie períodos de escalas de internato
-                    </CardDescription>
-                  </div>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nova Escala
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <Calendar className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground mb-4">
-                    Nenhuma escala cadastrada ainda
-                  </p>
-                  <Button variant="outline">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Criar Primeira Escala
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="escalas" key={`escalas-${refreshKey}`}>
+            <ScaleForm onSuccess={handleRefresh} />
           </TabsContent>
 
-          <TabsContent value="atividades" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Gerenciar Atividades</CardTitle>
-                    <CardDescription>
-                      Cadastre plantões, ambulatórios e enfermarias
-                    </CardDescription>
-                  </div>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nova Atividade
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <Calendar className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    Selecione uma escala para cadastrar atividades
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="atividades" key={`atividades-${refreshKey}`}>
+            <ActivityForm onSuccess={handleRefresh} />
           </TabsContent>
 
-          <TabsContent value="participantes" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Participantes</CardTitle>
-                <CardDescription>
-                  Visualize e gerencie os participantes cadastrados
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    Carregando lista de participantes...
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="rodadas" key={`rodadas-${refreshKey}`}>
+            <RoundManager />
           </TabsContent>
 
-          <TabsContent value="regras" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurar Regras</CardTitle>
-                <CardDescription>
-                  Defina regras personalizadas para a escala ativa
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <SettingsIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    Selecione uma escala para configurar regras
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="regras" key={`regras-${refreshKey}`}>
+            <RulesConfig />
           </TabsContent>
         </Tabs>
       </main>

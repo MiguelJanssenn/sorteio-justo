@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, ClipboardList, RefreshCw, LogOut, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PromoteAdminButton } from "@/components/PromoteAdminButton";
+import { ActivitySelection } from "@/components/participant/ActivitySelection";
 
 const Index = () => {
   const [user, setUser] = useState<any>(null);
@@ -144,25 +145,7 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="escolher" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sistema de Escolha</CardTitle>
-                <CardDescription>
-                  Aguarde sua vez na rodada para escolher suas atividades
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <Calendar className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground mb-4">
-                    Nenhuma escala ativa no momento
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Aguarde o administrador iniciar uma nova rodada de escolhas
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {user && <ActivitySelection userId={user.id} />}
           </TabsContent>
 
           <TabsContent value="minhas" className="space-y-4">
