@@ -15,6 +15,7 @@ export const RoundManager = () => {
   const [rodadaAtual, setRodadaAtual] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [deletingRodada, setDeletingRodada] = useState(false);
+  const [deletingAllRodadas, setDeletingAllRodadas] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -241,6 +242,74 @@ export const RoundManager = () => {
     }
   };
 
+  const excluirTodasRodadas = async () => {
+    if (!escalaId) return;
+    setLoading(true);
+
+    try {
+      // Buscar todas as rodadas da escala
+      const { data: todasRodadas } = await supabase
+        .from("rodadas")
+        .select("id")
+        .eq("escala_id", escalaId);
+
+      if (!todasRodadas || todasRodadas.length === 0) {
+        toast({
+          title: "Nenhuma rodada encontrada",
+          description: "Não há rodadas para excluir nesta escala.",
+        });
+        setLoading(false);
+        setDeletingAllRodadas(false);
+        return;
+      }
+
+      // Verificar se há escolhas em alguma rodada
+      const rodadaIds = todasRodadas.map(r => r.id);
+      const { data: escolhas } = await supabase
+        .from("escolhas")
+        .select("id")
+        .in("rodada_id", rodadaIds)
+        .limit(1);
+
+      if (escolhas && escolhas.length > 0) {
+        toast({
+          title: "Não é possível excluir",
+          description: "Existem rodadas com escolhas registradas. Exclua as escolhas primeiro.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        setDeletingAllRodadas(false);
+        return;
+      }
+
+      // Excluir todas as rodadas
+      const { error } = await supabase
+        .from("rodadas")
+        .delete()
+        .eq("escala_id", escalaId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Rodadas excluídas!",
+        description: `${todasRodadas.length} rodada(s) foram removidas com sucesso.`,
+      });
+
+      setDeletingAllRodadas(false);
+      setRodadaAtual(null);
+      fetchRodadaAtual();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir rodadas",
+        description: error.message,
+        variant: "destructive",
+      });
+      setDeletingAllRodadas(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <Card>
@@ -266,11 +335,23 @@ export const RoundManager = () => {
                     {escala.nome}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
+            </SelectContent>
+          </Select>
+        </div>
 
-          {rodadaAtual ? (
+        {escalaId && (
+          <Button 
+            onClick={() => setDeletingAllRodadas(true)} 
+            disabled={loading} 
+            variant="outline"
+            className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Excluir Todas as Rodadas desta Escala
+          </Button>
+        )}
+
+        {rodadaAtual ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                 <div>
@@ -344,6 +425,28 @@ export const RoundManager = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deletingAllRodadas} onOpenChange={setDeletingAllRodadas}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Todas as Rodadas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir TODAS as rodadas desta escala? Esta ação não pode ser desfeita.
+              {"\n\n"}
+              Nota: Só é possível excluir rodadas sem escolhas registradas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={excluirTodasRodadas}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir Todas
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
