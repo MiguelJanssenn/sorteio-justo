@@ -389,6 +389,10 @@ export type Database = {
     }
     Functions: {
       email_autorizado: { Args: { email_check: string }; Returns: boolean }
+      excluir_rodadas_escala: {
+        Args: { escala_id_param: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

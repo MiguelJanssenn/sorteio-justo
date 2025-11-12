@@ -247,76 +247,26 @@ export const RoundManager = () => {
     setLoading(true);
 
     try {
-      // Buscar todas as rodadas da escala
-      const { data: todasRodadas } = await supabase
-        .from("rodadas")
-        .select("id")
-        .eq("escala_id", escalaId);
+      // Usar a função do banco de dados que lida com a exclusão de forma segura
+      const { data, error } = await supabase.rpc('excluir_rodadas_escala', {
+        escala_id_param: escalaId
+      });
 
-      if (!todasRodadas || todasRodadas.length === 0) {
+      if (error) throw error;
+
+      const resultado = data as { rodadas_excluidas: number; escolhas_excluidas: number };
+
+      if (resultado.rodadas_excluidas === 0) {
         toast({
           title: "Nenhuma rodada encontrada",
           description: "Não há rodadas para excluir nesta escala.",
         });
-        setLoading(false);
-        setDeletingAllRodadas(false);
-        return;
-      }
-
-      const rodadaIds = todasRodadas.map(r => r.id);
-
-      // Buscar todas as escolhas para contar quantas por atividade
-      const { data: todasEscolhas } = await supabase
-        .from("escolhas")
-        .select("atividade_id")
-        .in("rodada_id", rodadaIds);
-
-      // Contar escolhas por atividade
-      const contagemPorAtividade: Record<string, number> = {};
-      if (todasEscolhas) {
-        todasEscolhas.forEach(escolha => {
-          contagemPorAtividade[escolha.atividade_id] = 
-            (contagemPorAtividade[escolha.atividade_id] || 0) + 1;
+      } else {
+        toast({
+          title: "Rodadas excluídas!",
+          description: `${resultado.rodadas_excluidas} rodada(s) e ${resultado.escolhas_excluidas} escolha(s) foram removidas com sucesso.`,
         });
       }
-
-      // Primeiro, ajustar manualmente as vagas_ocupadas para evitar constraint violation
-      for (const [atividadeId, quantidade] of Object.entries(contagemPorAtividade)) {
-        const { data: atividade } = await supabase
-          .from("atividades")
-          .select("vagas_ocupadas")
-          .eq("id", atividadeId)
-          .single();
-
-        if (atividade) {
-          const novasVagas = Math.max(0, (atividade.vagas_ocupadas || 0) - quantidade);
-          await supabase
-            .from("atividades")
-            .update({ vagas_ocupadas: novasVagas })
-            .eq("id", atividadeId);
-        }
-      }
-
-      // Agora excluir todas as escolhas (o trigger não será acionado pois já ajustamos)
-      const { error: escolhasError } = await supabase
-        .from("escolhas")
-        .delete()
-        .in("rodada_id", rodadaIds);
-
-      if (escolhasError) throw escolhasError;
-
-      // Excluir todas as rodadas
-      const { error: rodadasError } = await supabase
-        .from("rodadas")
-        .delete()
-        .eq("escala_id", escalaId);
-
-      if (rodadasError) throw rodadasError;
-
-      toast({
-        title: "Rodadas excluídas!",
-        description: `${todasRodadas.length} rodada(s) e suas escolhas foram removidas com sucesso.`,
-      });
 
       setDeletingAllRodadas(false);
       setRodadaAtual(null);
