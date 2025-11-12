@@ -25,9 +25,9 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   useEffect(() => {
     fetchRodadaAtual();
     
-    // Realtime para mudanças na rodada
+    // Realtime para mudanças na rodada e escolhas
     const channel = supabase
-      .channel('rodadas-changes')
+      .channel('rodadas-escolhas-changes')
       .on(
         'postgres_changes',
         {
@@ -35,7 +35,20 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
           schema: 'public',
           table: 'rodadas'
         },
-        () => {
+        (payload) => {
+          console.log('Mudança na rodada:', payload);
+          fetchRodadaAtual();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'escolhas'
+        },
+        (payload) => {
+          console.log('Mudança nas escolhas:', payload);
           fetchRodadaAtual();
         }
       )
@@ -47,6 +60,8 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
   }, [userId]);
 
   const fetchRodadaAtual = async () => {
+    console.log('Buscando rodada atual...');
+    
     // Buscar rodada ativa
     const { data: rodada } = await supabase
       .from("rodadas")
@@ -55,6 +70,8 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    console.log('Rodada encontrada:', rodada);
 
     if (!rodada) {
       setRodadaAtual(null);
@@ -75,7 +92,14 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
 
     // Verificar se é minha vez
     const ordemAtual = rodada.ordem_sorteada[rodada.indice_atual];
-    setMinhaVez(ordemAtual === userId);
+    const ehMinhaVez = ordemAtual === userId;
+    
+    console.log('Índice atual da rodada:', rodada.indice_atual);
+    console.log('Usuário atual na vez:', ordemAtual);
+    console.log('Meu ID:', userId);
+    console.log('É minha vez?', ehMinhaVez);
+    
+    setMinhaVez(ehMinhaVez);
 
     // Buscar nome do participante atual
     if (ordemAtual) {
@@ -106,6 +130,8 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
     setLoading(true);
 
     try {
+      console.log('Confirmando escolha para rodada:', rodadaAtual.id);
+      
       // Verificar novamente se já escolheu (segurança)
       const { data: escolhaExistente } = await supabase
         .from("escolhas")
@@ -132,11 +158,18 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
         atividade_id: atividadeSelecionada
       });
 
-      if (escolhaError) throw escolhaError;
+      if (escolhaError) {
+        console.error('Erro ao registrar escolha:', escolhaError);
+        throw escolhaError;
+      }
+
+      console.log('Escolha registrada com sucesso');
 
       // Avançar para próximo participante
       const proximoIndice = rodadaAtual.indice_atual + 1;
       const finalizada = proximoIndice >= rodadaAtual.ordem_sorteada.length;
+
+      console.log('Atualizando rodada - índice atual:', rodadaAtual.indice_atual, '-> próximo:', proximoIndice, 'finalizada:', finalizada);
 
       const { error: rodadaError } = await supabase
         .from("rodadas")
@@ -146,24 +179,34 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
         })
         .eq("id", rodadaAtual.id);
 
-      if (rodadaError) throw rodadaError;
+      if (rodadaError) {
+        console.error('Erro ao atualizar rodada:', rodadaError);
+        throw rodadaError;
+      }
+
+      console.log('Rodada atualizada com sucesso');
 
       if (finalizada) {
         toast({
           title: "Escolha registrada!",
-          description: "Rodada finalizada! Aguarde a próxima rodada com novo sorteio.",
+          description: "Rodada finalizada! A próxima rodada será criada automaticamente.",
         });
       } else {
         toast({
           title: "Escolha registrada!",
-          description: "Sua atividade foi registrada com sucesso.",
+          description: "Sua atividade foi registrada. Vez do próximo participante!",
         });
       }
 
       setAtividadeSelecionada(null);
       setJaEscolheu(true);
-      fetchRodadaAtual();
+      
+      // Forçar atualização imediata
+      setTimeout(() => {
+        fetchRodadaAtual();
+      }, 500);
     } catch (error: any) {
+      console.error('Erro geral:', error);
       toast({
         title: "Erro ao registrar escolha",
         description: error.message,
