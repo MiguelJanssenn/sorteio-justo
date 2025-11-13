@@ -190,7 +190,7 @@ export const SistemaTrocas = () => {
 
       setMinhasEscolhas(escolhasData as any || []);
 
-      // Buscar trocas pendentes (solicitadas por mim ou para mim)
+      // Buscar trocas (solicitadas por mim ou para mim)
       const { data: trocasData } = await supabase
         .from("trocas")
         .select(`
@@ -223,7 +223,7 @@ export const SistemaTrocas = () => {
           )
         `)
         .or(`solicitante_id.eq.${session.user.id},receptor_id.eq.${session.user.id}`)
-        .eq("status", "pendente");
+        .order("created_at", { ascending: false });
 
       setTrocas(trocasData as any || []);
       setLoading(false);
@@ -495,7 +495,7 @@ export const SistemaTrocas = () => {
           <div className="text-center py-12">
             <RefreshCw className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground">
-              Nenhuma solicitação de troca pendente
+              Nenhuma solicitação de troca
             </p>
           </div>
         ) : (
