@@ -17,6 +17,7 @@ import { MinhasAtividades } from "@/components/participant/MinhasAtividades";
 import { RodadaAtualCard } from "@/components/participant/RodadaAtualCard";
 import { MinhasEscolhas } from "@/components/participant/MinhasEscolhas";
 import { SistemaTrocas } from "@/components/participant/SistemaTrocas";
+import { HistoricoEscalas } from "@/components/participant/HistoricoEscalas";
 
 const Index = () => {
   const [user, setUser] = useState<any>(null);
@@ -123,11 +124,12 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="participacao" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
             <TabsTrigger value="participacao" className="text-xs sm:text-sm">Participação</TabsTrigger>
             <TabsTrigger value="escolher" className="text-xs sm:text-sm">Escolher</TabsTrigger>
             <TabsTrigger value="minhas" className="text-xs sm:text-sm">Minhas</TabsTrigger>
             <TabsTrigger value="trocas" className="text-xs sm:text-sm">Trocas</TabsTrigger>
+            <TabsTrigger value="historico" className="text-xs sm:text-sm">Histórico</TabsTrigger>
           </TabsList>
 
           <TabsContent value="participacao" className="space-y-4">
@@ -153,6 +155,10 @@ const Index = () => {
 
           <TabsContent value="trocas" className="space-y-4">
             <SistemaTrocas />
+          </TabsContent>
+
+          <TabsContent value="historico" className="space-y-4">
+            <HistoricoEscalas />
           </TabsContent>
         </Tabs>
       </main>

@@ -13,6 +13,7 @@ import { RulesConfig } from "@/components/admin/RulesConfig";
 import { ScaleView } from "@/components/admin/ScaleView";
 import { EmailsAutorizados } from "@/components/admin/EmailsAutorizados";
 import { ParticipantesAtivos } from "@/components/admin/ParticipantesAtivos";
+import { HistoricoEscalas } from "@/components/admin/HistoricoEscalas";
 
 const Admin = () => {
   const [loading, setLoading] = useState(true);
@@ -99,12 +100,13 @@ const Admin = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <Tabs defaultValue="escalas" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-7">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-8">
               <TabsTrigger value="escalas" className="text-xs sm:text-sm whitespace-nowrap">Escalas</TabsTrigger>
               <TabsTrigger value="atividades" className="text-xs sm:text-sm whitespace-nowrap">Atividades</TabsTrigger>
               <TabsTrigger value="rodadas" className="text-xs sm:text-sm whitespace-nowrap">Rodadas</TabsTrigger>
               <TabsTrigger value="regras" className="text-xs sm:text-sm whitespace-nowrap">Regras</TabsTrigger>
               <TabsTrigger value="visualizar" className="text-xs sm:text-sm whitespace-nowrap">Visualizar</TabsTrigger>
+              <TabsTrigger value="historico" className="text-xs sm:text-sm whitespace-nowrap">Histórico</TabsTrigger>
               <TabsTrigger value="participantes" className="text-xs sm:text-sm whitespace-nowrap">Participantes</TabsTrigger>
               <TabsTrigger value="emails" className="text-xs sm:text-sm whitespace-nowrap">Emails</TabsTrigger>
             </TabsList>
@@ -131,6 +133,10 @@ const Admin = () => {
 
           <TabsContent value="visualizar" key={`visualizar-${refreshKey}`}>
             <ScaleView />
+          </TabsContent>
+
+          <TabsContent value="historico" key={`historico-${refreshKey}`}>
+            <HistoricoEscalas />
           </TabsContent>
 
           <TabsContent value="participantes" key={`participantes-${refreshKey}`}>
