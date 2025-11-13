@@ -422,12 +422,14 @@ export const SistemaTrocas = () => {
                     <SelectValue placeholder="Selecione sua atividade" />
                   </SelectTrigger>
                   <SelectContent>
-                    {minhasEscolhas.map((escolha) => (
-                      <SelectItem key={escolha.atividade_id} value={escolha.atividade_id}>
-                        {escolha.atividades.tipo} - {format(new Date(escolha.atividades.data), "dd/MM/yyyy", { locale: ptBR })}
-                        {escolha.atividades.local && ` - 📍 ${escolha.atividades.local}`}
-                      </SelectItem>
-                    ))}
+                    {minhasEscolhas
+                      .filter((escolha) => escolha.atividades !== null)
+                      .map((escolha) => (
+                        <SelectItem key={escolha.atividade_id} value={escolha.atividade_id}>
+                          {escolha.atividades.tipo} - {format(new Date(escolha.atividades.data), "dd/MM/yyyy", { locale: ptBR })}
+                          {escolha.atividades.local && ` - 📍 ${escolha.atividades.local}`}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -468,7 +470,7 @@ export const SistemaTrocas = () => {
                         </SelectTrigger>
                         <SelectContent>
                           {participantesComAtividade
-                            .filter(p => p.user_id === receptorId)
+                            .filter(p => p.user_id === receptorId && p.atividades !== null)
                             .map((p) => (
                               <SelectItem key={p.atividade_id} value={p.atividade_id}>
                                 {p.atividades.tipo} - {format(new Date(p.atividades.data), "dd/MM/yyyy", { locale: ptBR })}

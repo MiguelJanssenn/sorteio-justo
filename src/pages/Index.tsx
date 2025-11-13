@@ -12,9 +12,7 @@ import { ActivitySelection } from "@/components/participant/ActivitySelection";
 import { ParticipacaoEscala } from "@/components/participant/ParticipacaoEscala";
 import { VezAtual } from "@/components/participant/VezAtual";
 import { RodadaStatus } from "@/components/participant/RodadaStatus";
-import { EscalaAtivaCard } from "@/components/participant/EscalaAtivaCard";
-import { MinhasAtividades } from "@/components/participant/MinhasAtividades";
-import { RodadaAtualCard } from "@/components/participant/RodadaAtualCard";
+import { ResumoCard } from "@/components/participant/ResumoCard";
 import { MinhasEscolhas } from "@/components/participant/MinhasEscolhas";
 import { SistemaTrocas } from "@/components/participant/SistemaTrocas";
 import { HistoricoEscalas } from "@/components/participant/HistoricoEscalas";
@@ -117,10 +115,8 @@ const Index = () => {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-3 mb-6 sm:mb-8">
-          <EscalaAtivaCard />
-          <MinhasAtividades />
-          <RodadaAtualCard />
+        <div className="mb-6 sm:mb-8">
+          <ResumoCard />
         </div>
 
         <Tabs defaultValue="participacao" className="space-y-4">
