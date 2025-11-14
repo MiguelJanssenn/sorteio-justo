@@ -20,12 +20,16 @@ export type Database = {
           data: string
           eh_fim_semana: boolean | null
           escala_id: string
+          especialidade: string | null
           horario_fim: string
           horario_inicio: string
           id: string
           local: string | null
           observacao: string | null
+          periodo_numero: number | null
+          subgrupo_permitido: string | null
           tipo: string
+          tipo_atividade_id: string | null
           vagas_ocupadas: number | null
           vagas_total: number
         }
@@ -34,12 +38,16 @@ export type Database = {
           data: string
           eh_fim_semana?: boolean | null
           escala_id: string
+          especialidade?: string | null
           horario_fim: string
           horario_inicio: string
           id?: string
           local?: string | null
           observacao?: string | null
+          periodo_numero?: number | null
+          subgrupo_permitido?: string | null
           tipo: string
+          tipo_atividade_id?: string | null
           vagas_ocupadas?: number | null
           vagas_total: number
         }
@@ -48,12 +56,16 @@ export type Database = {
           data?: string
           eh_fim_semana?: boolean | null
           escala_id?: string
+          especialidade?: string | null
           horario_fim?: string
           horario_inicio?: string
           id?: string
           local?: string | null
           observacao?: string | null
+          periodo_numero?: number | null
+          subgrupo_permitido?: string | null
           tipo?: string
+          tipo_atividade_id?: string | null
           vagas_ocupadas?: number | null
           vagas_total?: number
         }
@@ -63,6 +75,54 @@ export type Database = {
             columns: ["escala_id"]
             isOneToOne: false
             referencedRelation: "escalas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_tipo_atividade_id_fkey"
+            columns: ["tipo_atividade_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_atividade_modelo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      configuracao_subgrupos: {
+        Row: {
+          created_at: string
+          especialidade_periodo1: string | null
+          especialidade_periodo2: string | null
+          especialidade_periodo3: string | null
+          id: string
+          modelo_id: string
+          nome_subgrupo: string
+          ordem: number
+        }
+        Insert: {
+          created_at?: string
+          especialidade_periodo1?: string | null
+          especialidade_periodo2?: string | null
+          especialidade_periodo3?: string | null
+          id?: string
+          modelo_id: string
+          nome_subgrupo: string
+          ordem: number
+        }
+        Update: {
+          created_at?: string
+          especialidade_periodo1?: string | null
+          especialidade_periodo2?: string | null
+          especialidade_periodo3?: string | null
+          id?: string
+          modelo_id?: string
+          nome_subgrupo?: string
+          ordem?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuracao_subgrupos_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_estagio"
             referencedColumns: ["id"]
           },
         ]
@@ -93,6 +153,7 @@ export type Database = {
           created_at: string | null
           created_by: string
           id: string
+          modelo_id: string | null
           nome: string
           periodo_fim: string
           periodo_inicio: string
@@ -103,6 +164,7 @@ export type Database = {
           created_at?: string | null
           created_by: string
           id?: string
+          modelo_id?: string | null
           nome: string
           periodo_fim: string
           periodo_inicio: string
@@ -113,6 +175,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string
           id?: string
+          modelo_id?: string | null
           nome?: string
           periodo_fim?: string
           periodo_inicio?: string
@@ -125,6 +188,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalas_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_estagio"
             referencedColumns: ["id"]
           },
         ]
@@ -175,12 +245,49 @@ export type Database = {
           },
         ]
       }
+      modelos_estagio: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string
+          descricao: string | null
+          id: string
+          meses_recomendados: string[] | null
+          nome: string
+          num_subgrupos: number
+          tem_rotacao: boolean
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by: string
+          descricao?: string | null
+          id?: string
+          meses_recomendados?: string[] | null
+          nome: string
+          num_subgrupos?: number
+          tem_rotacao?: boolean
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string
+          descricao?: string | null
+          id?: string
+          meses_recomendados?: string[] | null
+          nome?: string
+          num_subgrupos?: number
+          tem_rotacao?: boolean
+        }
+        Relationships: []
+      }
       participacao_escalas: {
         Row: {
           ativo: boolean
           created_at: string
           escala_id: string
           id: string
+          subgrupo: string | null
           user_id: string
         }
         Insert: {
@@ -188,6 +295,7 @@ export type Database = {
           created_at?: string
           escala_id: string
           id?: string
+          subgrupo?: string | null
           user_id: string
         }
         Update: {
@@ -195,11 +303,50 @@ export type Database = {
           created_at?: string
           escala_id?: string
           id?: string
+          subgrupo?: string | null
           user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "participacao_escalas_escala_id_fkey"
+            columns: ["escala_id"]
+            isOneToOne: false
+            referencedRelation: "escalas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      periodos_rotacao: {
+        Row: {
+          created_at: string
+          data_fim: string
+          data_inicio: string
+          descricao: string | null
+          escala_id: string
+          id: string
+          numero_periodo: number
+        }
+        Insert: {
+          created_at?: string
+          data_fim: string
+          data_inicio: string
+          descricao?: string | null
+          escala_id: string
+          id?: string
+          numero_periodo: number
+        }
+        Update: {
+          created_at?: string
+          data_fim?: string
+          data_inicio?: string
+          descricao?: string | null
+          escala_id?: string
+          id?: string
+          numero_periodo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "periodos_rotacao_escala_id_fkey"
             columns: ["escala_id"]
             isOneToOne: false
             referencedRelation: "escalas"
@@ -297,6 +444,71 @@ export type Database = {
             columns: ["escala_id"]
             isOneToOne: false
             referencedRelation: "escalas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tipos_atividade_modelo: {
+        Row: {
+          codigo: string
+          cor_dashboard: string | null
+          created_at: string
+          descricao: string | null
+          horario_fim: string | null
+          horario_inicio: string | null
+          id: string
+          modelo_id: string
+          modo_participacao: string
+          nome: string
+          ordem_exibicao: number
+          permite_feriado: boolean
+          permite_fim_semana: boolean
+          quota_maxima: number | null
+          quota_minima: number | null
+          vagas_por_slot: number
+        }
+        Insert: {
+          codigo: string
+          cor_dashboard?: string | null
+          created_at?: string
+          descricao?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          modelo_id: string
+          modo_participacao?: string
+          nome: string
+          ordem_exibicao?: number
+          permite_feriado?: boolean
+          permite_fim_semana?: boolean
+          quota_maxima?: number | null
+          quota_minima?: number | null
+          vagas_por_slot?: number
+        }
+        Update: {
+          codigo?: string
+          cor_dashboard?: string | null
+          created_at?: string
+          descricao?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          modelo_id?: string
+          modo_participacao?: string
+          nome?: string
+          ordem_exibicao?: number
+          permite_feriado?: boolean
+          permite_fim_semana?: boolean
+          quota_maxima?: number | null
+          quota_minima?: number | null
+          vagas_por_slot?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tipos_atividade_modelo_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_estagio"
             referencedColumns: ["id"]
           },
         ]
