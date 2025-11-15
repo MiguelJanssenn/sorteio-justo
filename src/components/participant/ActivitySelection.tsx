@@ -79,7 +79,7 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
     // Buscar rodada ativa
     const { data: rodada } = await supabase
       .from("rodadas")
-      .select("*, escalas(*)")
+      .select("*, escalas(*, modelos_estagio(*))")
       .eq("finalizada", false)
       .order("created_at", { ascending: false })
       .limit(1)

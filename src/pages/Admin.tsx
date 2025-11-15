@@ -16,6 +16,7 @@ import { ParticipantesAtivos } from "@/components/admin/ParticipantesAtivos";
 import { HistoricoEscalas } from "@/components/admin/HistoricoEscalas";
 import { ModelosManager } from "@/components/admin/ModelosManager";
 import { TiposAtividadeManager } from "@/components/admin/TiposAtividadeManager";
+import { SubgruposConfigurator } from "@/components/admin/SubgruposConfigurator";
 
 const Admin = () => {
   const [loading, setLoading] = useState(true);
@@ -102,9 +103,10 @@ const Admin = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <Tabs defaultValue="escalas" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-10">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-11">
               <TabsTrigger value="modelos" className="text-xs sm:text-sm whitespace-nowrap">Modelos</TabsTrigger>
               <TabsTrigger value="tipos" className="text-xs sm:text-sm whitespace-nowrap">Tipos Ativ.</TabsTrigger>
+              <TabsTrigger value="subgrupos" className="text-xs sm:text-sm whitespace-nowrap">Subgrupos</TabsTrigger>
               <TabsTrigger value="escalas" className="text-xs sm:text-sm whitespace-nowrap">Escalas</TabsTrigger>
               <TabsTrigger value="atividades" className="text-xs sm:text-sm whitespace-nowrap">Atividades</TabsTrigger>
               <TabsTrigger value="rodadas" className="text-xs sm:text-sm whitespace-nowrap">Rodadas</TabsTrigger>
@@ -122,6 +124,10 @@ const Admin = () => {
 
           <TabsContent value="tipos" key={`tipos-${refreshKey}`}>
             <TiposAtividadeManager />
+          </TabsContent>
+
+          <TabsContent value="subgrupos" key={`subgrupos-${refreshKey}`}>
+            <SubgruposConfigurator />
           </TabsContent>
 
           <TabsContent value="escalas" key={`escalas-${refreshKey}`}>

@@ -11,6 +11,7 @@ import { ptBR } from "date-fns/locale";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { ModeloDashboard } from "./ModeloDashboard";
 
 interface Escolha {
   id: string;
@@ -65,7 +66,7 @@ export const ScaleView = () => {
         .order("atividades(data)", { ascending: true }),
       supabase
         .from("escalas")
-        .select("*")
+        .select("*, modelos_estagio(id, nome)")
         .order("created_at", { ascending: false }),
       supabase
         .from("profiles")
@@ -163,6 +164,10 @@ export const ScaleView = () => {
     }
     return true;
   });
+
+  const selectedEscalaData = selectedEscala !== "all" 
+    ? escalas.find(e => e.nome === selectedEscala)
+    : null;
 
   const groupedByDate = filteredEscolhas.reduce((acc, escolha) => {
     const date = escolha.atividades.data;
@@ -268,16 +273,33 @@ export const ScaleView = () => {
         </div>
 
         <Tabs defaultValue="table" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="table">
-              <List className="w-4 h-4 mr-2" />
-              Tabela
-            </TabsTrigger>
-            <TabsTrigger value="calendar">
-              <Calendar className="w-4 h-4 mr-2" />
-              Por Data
-            </TabsTrigger>
-          </TabsList>
+          {selectedEscalaData?.modelos_estagio?.id ? (
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="table">
+                <List className="w-4 h-4 mr-2" />
+                Tabela
+              </TabsTrigger>
+              <TabsTrigger value="calendar">
+                <Calendar className="w-4 h-4 mr-2" />
+                Por Data
+              </TabsTrigger>
+              <TabsTrigger value="dashboard">
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Dashboard Visual
+              </TabsTrigger>
+            </TabsList>
+          ) : (
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="table">
+                <List className="w-4 h-4 mr-2" />
+                Tabela
+              </TabsTrigger>
+              <TabsTrigger value="calendar">
+                <Calendar className="w-4 h-4 mr-2" />
+                Por Data
+              </TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value="table" className="space-y-4">
             {filteredEscolhas.length === 0 ? (
@@ -369,6 +391,15 @@ export const ScaleView = () => {
               ))
             )}
           </TabsContent>
+
+          {selectedEscalaData?.modelos_estagio?.id && (
+            <TabsContent value="dashboard">
+              <ModeloDashboard 
+                escalaId={selectedEscalaData.id} 
+                modeloId={selectedEscalaData.modelos_estagio.id}
+              />
+            </TabsContent>
+          )}
         </Tabs>
 
         <div className="flex items-center justify-between pt-4 border-t">

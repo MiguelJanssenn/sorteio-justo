@@ -17,8 +17,10 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const [nome, setNome] = useState("");
   const [periodoInicio, setPeriodoInicio] = useState("");
   const [periodoFim, setPeriodoFim] = useState("");
+  const [modeloId, setModeloId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [escalas, setEscalas] = useState<any[]>([]);
+  const [modelos, setModelos] = useState<any[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingEscala, setEditingEscala] = useState<any | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -26,12 +28,23 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
 
   useEffect(() => {
     fetchEscalas();
+    fetchModelos();
   }, []);
+
+  const fetchModelos = async () => {
+    const { data } = await supabase
+      .from("modelos_estagio")
+      .select("*")
+      .eq("ativo", true)
+      .order("nome");
+    
+    if (data) setModelos(data);
+  };
 
   const fetchEscalas = async () => {
     const { data } = await supabase
       .from("escalas")
-      .select("*")
+      .select("*, modelos_estagio(nome)")
       .order("created_at", { ascending: false });
     
     if (data) setEscalas(data);
@@ -49,6 +62,7 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
         nome,
         periodo_inicio: periodoInicio,
         periodo_fim: periodoFim,
+        modelo_id: modeloId || null,
         created_by: user.id,
         status: "ativa"
       });
@@ -63,6 +77,7 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
       setNome("");
       setPeriodoInicio("");
       setPeriodoFim("");
+      setModeloId("");
       await fetchEscalas();
       onSuccess();
     } catch (error: any) {
@@ -81,6 +96,7 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
       ...escala,
       periodo_inicio: escala.periodo_inicio,
       periodo_fim: escala.periodo_fim,
+      modelo_id: escala.modelo_id || "",
     });
     setEditDialogOpen(true);
   };
@@ -96,6 +112,7 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
           nome: editingEscala.nome,
           periodo_inicio: editingEscala.periodo_inicio,
           periodo_fim: editingEscala.periodo_fim,
+          modelo_id: editingEscala.modelo_id || null,
           status: editingEscala.status,
         })
         .eq("id", editingEscala.id);
@@ -190,6 +207,22 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
               required
             />
           </div>
+          <div>
+            <Label htmlFor="modelo">Modelo de Estágio</Label>
+            <Select value={modeloId} onValueChange={setModeloId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o modelo (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Sem modelo</SelectItem>
+                {modelos.map(modelo => (
+                  <SelectItem key={modelo.id} value={modelo.id}>
+                    {modelo.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="inicio">Data Início</Label>
@@ -233,6 +266,7 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Modelo</TableHead>
                   <TableHead>Período</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-[100px]">Ações</TableHead>
@@ -242,6 +276,9 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
                 {escalas.map((escala) => (
                   <TableRow key={escala.id}>
                     <TableCell className="font-medium">{escala.nome}</TableCell>
+                    <TableCell>
+                      {escala.modelos_estagio?.nome || <span className="text-muted-foreground">Sem modelo</span>}
+                    </TableCell>
                     <TableCell>
                       {format(new Date(escala.periodo_inicio + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })} - {format(new Date(escala.periodo_fim + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}
                     </TableCell>
@@ -321,6 +358,25 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
                 onChange={(e) => setEditingEscala({ ...editingEscala, nome: e.target.value })}
                 required
               />
+            </div>
+            <div>
+              <Label htmlFor="edit-modelo">Modelo de Estágio</Label>
+              <Select 
+                value={editingEscala.modelo_id || ""} 
+                onValueChange={(value) => setEditingEscala({ ...editingEscala, modelo_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o modelo (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sem modelo</SelectItem>
+                  {modelos.map(modelo => (
+                    <SelectItem key={modelo.id} value={modelo.id}>
+                      {modelo.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
