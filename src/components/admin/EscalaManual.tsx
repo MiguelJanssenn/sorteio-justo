@@ -8,6 +8,7 @@ import { RoundManager } from "./RoundManager";
 import { RulesConfig } from "./RulesConfig";
 import { ScaleView } from "./ScaleView";
 import { HistoricoEscalas } from "./HistoricoEscalas";
+import { GeradorAtividades } from "./GeradorAtividades";
 
 export const EscalaManual = () => {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -27,8 +28,9 @@ export const EscalaManual = () => {
       <CardContent>
         <Tabs defaultValue="escalas" className="space-y-4">
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-6">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-7">
               <TabsTrigger value="escalas" className="text-xs sm:text-sm whitespace-nowrap">Escalas</TabsTrigger>
+              <TabsTrigger value="gerar" className="text-xs sm:text-sm whitespace-nowrap">Gerar Ativs</TabsTrigger>
               <TabsTrigger value="atividades" className="text-xs sm:text-sm whitespace-nowrap">Atividades</TabsTrigger>
               <TabsTrigger value="rodadas" className="text-xs sm:text-sm whitespace-nowrap">Rodadas</TabsTrigger>
               <TabsTrigger value="regras" className="text-xs sm:text-sm whitespace-nowrap">Regras</TabsTrigger>
@@ -39,6 +41,10 @@ export const EscalaManual = () => {
 
           <TabsContent value="escalas" key={`escalas-${refreshKey}`}>
             <ScaleForm onSuccess={handleRefresh} />
+          </TabsContent>
+
+          <TabsContent value="gerar" key={`gerar-${refreshKey}`}>
+            <GeradorAtividades />
           </TabsContent>
 
           <TabsContent value="atividades" key={`atividades-${refreshKey}`}>
