@@ -97,6 +97,19 @@ export const GeradorAtividades = () => {
         while (dataAtual <= dataFim) {
           const ehFimSemana = checkIsWeekend(dataAtual);
           const ehFeriado = false; // TODO: implementar verificação de feriados
+          const diaSemana = dataAtual.getDay(); // 0 = domingo, 6 = sábado
+
+          // Verificar se o dia da semana está permitido
+          if (tipo.dias_semana && tipo.dias_semana.length > 0 && !tipo.dias_semana.includes(diaSemana)) {
+            dataAtual = addDays(dataAtual, 1);
+            continue;
+          }
+
+          // Verificar se permite dias úteis (segunda a sexta)
+          if (!ehFimSemana && tipo.permite_dias_uteis === false) {
+            dataAtual = addDays(dataAtual, 1);
+            continue;
+          }
 
           // Verificar se o tipo permite fim de semana/feriado
           if ((ehFimSemana && !tipo.permite_fim_semana) || (ehFeriado && !tipo.permite_feriado)) {
@@ -126,7 +139,6 @@ export const GeradorAtividades = () => {
             horario_fim: tipo.horario_fim || "18:00",
             vagas_total: tipo.vagas_por_slot,
             vagas_ocupadas: 0,
-            eh_fim_semana: ehFimSemana,
             periodo_numero: periodoAtual?.numero_periodo || null,
             observacao: tipo.descricao || null,
           };
