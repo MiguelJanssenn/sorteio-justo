@@ -96,6 +96,17 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
     setRodadaAtual(rodada);
     setRodadasPausadas(rodada.escalas?.rodadas_pausadas || false);
 
+    // Buscar participação do usuário para obter seu subgrupo
+    const { data: participacao } = await supabase
+      .from("participacao_escalas")
+      .select("subgrupo")
+      .eq("escala_id", rodada.escala_id)
+      .eq("user_id", userId)
+      .eq("ativo", true)
+      .maybeSingle();
+
+    console.log('Participação do usuário:', participacao);
+
     // Buscar regra de ordem por tipo
     const { data: regraOrdem } = await supabase
       .from("regras")
@@ -147,10 +158,70 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
     }
 
     // Buscar TODAS as atividades (incluindo as já ocupadas)
-    const { data: atividadesData } = await supabase
+    let { data: atividadesData } = await supabase
       .from("atividades")
-      .select("*")
+      .select("*, tipo_atividade_id, tipos_atividade_modelo(*)")
       .eq("escala_id", rodada.escala_id);
+
+    // Aplicar filtros inteligentes se o modelo tem rotação e o usuário tem subgrupo
+    if (atividadesData && rodada.escalas?.modelos_estagio?.tem_rotacao && participacao?.subgrupo) {
+      const dataHoje = new Date().toISOString().split('T')[0];
+      
+      // Buscar período de rotação atual
+      const { data: periodos } = await supabase
+        .from("periodos_rotacao")
+        .select("*")
+        .eq("escala_id", rodada.escala_id)
+        .lte("data_inicio", dataHoje)
+        .gte("data_fim", dataHoje)
+        .maybeSingle();
+
+      const periodoAtual = periodos?.numero_periodo;
+      console.log('Período de rotação atual:', periodoAtual);
+
+      // Buscar configuração do subgrupo
+      const { data: configSubgrupo } = await supabase
+        .from("configuracao_subgrupos")
+        .select("*")
+        .eq("modelo_id", rodada.escalas.modelo_id)
+        .eq("nome_subgrupo", participacao.subgrupo)
+        .maybeSingle();
+
+      console.log('Configuração do subgrupo:', configSubgrupo);
+
+      // Filtrar atividades baseado no subgrupo e especialidade permitida
+      if (configSubgrupo) {
+        atividadesData = atividadesData.filter(ativ => {
+          // Se a atividade permite qualquer subgrupo, sempre mostrar
+          if (!ativ.subgrupo_permitido) return true;
+          
+          // Se a atividade especifica um subgrupo, verificar se é o subgrupo do usuário
+          if (ativ.subgrupo_permitido !== participacao.subgrupo) return false;
+
+          // Se a atividade tem especialidade, verificar se corresponde ao período
+          if (ativ.especialidade && periodoAtual) {
+            const especialidadePermitida = 
+              periodoAtual === 1 ? configSubgrupo.especialidade_periodo1 :
+              periodoAtual === 2 ? configSubgrupo.especialidade_periodo2 :
+              periodoAtual === 3 ? configSubgrupo.especialidade_periodo3 :
+              null;
+            
+            if (especialidadePermitida && ativ.especialidade !== especialidadePermitida) {
+              return false;
+            }
+          }
+
+          // Verificar se atividade está no período correto (se aplicável)
+          if (ativ.periodo_numero && periodoAtual && ativ.periodo_numero !== periodoAtual) {
+            return false;
+          }
+
+          return true;
+        });
+
+        console.log('Atividades após filtragem inteligente:', atividadesData.length);
+      }
+    }
 
     if (atividadesData) {
       // Ordenar atividades
@@ -406,6 +477,22 @@ export const ActivitySelection = ({ userId }: ActivitySelectionProps) => {
             <p className="text-xs sm:text-sm text-muted-foreground mt-2">
               Aguarde a próxima rodada para fazer uma nova escolha.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {rodadaAtual?.escalas?.modelos_estagio?.tem_rotacao && (
+        <Card className="bg-blue-500/10 border-blue-500/50">
+          <CardContent className="py-3 sm:py-4">
+            <div className="flex items-start gap-2">
+              <div className="text-blue-600 dark:text-blue-400 text-lg">ℹ️</div>
+              <div>
+                <p className="font-semibold text-sm">Filtragem Inteligente Ativa</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  As atividades exibidas foram filtradas automaticamente baseadas no seu subgrupo e período de rotação atual.
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
