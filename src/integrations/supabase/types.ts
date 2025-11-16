@@ -454,6 +454,7 @@ export type Database = {
           cor_dashboard: string | null
           created_at: string
           descricao: string | null
+          dias_semana: number[] | null
           horario_fim: string | null
           horario_inicio: string | null
           id: string
@@ -461,6 +462,7 @@ export type Database = {
           modo_participacao: string
           nome: string
           ordem_exibicao: number
+          permite_dias_uteis: boolean | null
           permite_feriado: boolean
           permite_fim_semana: boolean
           quota_maxima: number | null
@@ -472,6 +474,7 @@ export type Database = {
           cor_dashboard?: string | null
           created_at?: string
           descricao?: string | null
+          dias_semana?: number[] | null
           horario_fim?: string | null
           horario_inicio?: string | null
           id?: string
@@ -479,6 +482,7 @@ export type Database = {
           modo_participacao?: string
           nome: string
           ordem_exibicao?: number
+          permite_dias_uteis?: boolean | null
           permite_feriado?: boolean
           permite_fim_semana?: boolean
           quota_maxima?: number | null
@@ -490,6 +494,7 @@ export type Database = {
           cor_dashboard?: string | null
           created_at?: string
           descricao?: string | null
+          dias_semana?: number[] | null
           horario_fim?: string | null
           horario_inicio?: string | null
           id?: string
@@ -497,6 +502,7 @@ export type Database = {
           modo_participacao?: string
           nome?: string
           ordem_exibicao?: number
+          permite_dias_uteis?: boolean | null
           permite_feriado?: boolean
           permite_fim_semana?: boolean
           quota_maxima?: number | null

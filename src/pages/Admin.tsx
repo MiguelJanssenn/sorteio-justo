@@ -118,9 +118,8 @@ const Admin = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <Tabs defaultValue="modelos" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-6">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-5">
               <TabsTrigger value="modelos" className="text-xs sm:text-sm whitespace-nowrap">Modelos</TabsTrigger>
-              <TabsTrigger value="tipos" className="text-xs sm:text-sm whitespace-nowrap">Tipos Ativ.</TabsTrigger>
               <TabsTrigger value="subgrupos" className="text-xs sm:text-sm whitespace-nowrap">Subgrupos</TabsTrigger>
               <TabsTrigger value="manual" className="text-xs sm:text-sm whitespace-nowrap">Escala Manual</TabsTrigger>
               <TabsTrigger value="participantes" className="text-xs sm:text-sm whitespace-nowrap">Participantes</TabsTrigger>
@@ -130,10 +129,6 @@ const Admin = () => {
 
           <TabsContent value="modelos" key={`modelos-${refreshKey}`}>
             <ModelosManager />
-          </TabsContent>
-
-          <TabsContent value="tipos" key={`tipos-${refreshKey}`}>
-            <TiposAtividadeManager />
           </TabsContent>
 
           <TabsContent value="subgrupos" key={`subgrupos-${refreshKey}`}>

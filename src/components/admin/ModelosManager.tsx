@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { TiposAtividadeManager } from "./TiposAtividadeManager";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +48,7 @@ export function ModelosManager() {
   const [editingModelo, setEditingModelo] = useState<ModeloEstagio | null>(null);
   const [deletingModeloId, setDeletingModeloId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [modeloSelecionado, setModeloSelecionado] = useState<string>("");
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -194,76 +197,99 @@ export function ModelosManager() {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Modelos de Estágio</CardTitle>
-              <CardDescription>
-                Gerencie os templates de estágios (Gastro/Pneumo, Neonatologia, DIP/PS, etc.)
-              </CardDescription>
-            </div>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Modelo
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {modelos.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Nenhum modelo cadastrado ainda.</p>
-              <p className="text-sm mt-2">Clique em "Novo Modelo" para começar.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {modelos.map((modelo) => (
-                <div
-                  key={modelo.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-lg">{modelo.nome}</h3>
-                      {!modelo.ativo && (
-                        <span className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded">
-                          Inativo
-                        </span>
-                      )}
-                    </div>
-                    {modelo.descricao && (
-                      <p className="text-sm text-muted-foreground mt-1">{modelo.descricao}</p>
-                    )}
-                    <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                      <span>Subgrupos: {modelo.num_subgrupos}</span>
-                      <span>Rotação: {modelo.tem_rotacao ? "Sim" : "Não"}</span>
-                      {modelo.meses_recomendados && (
-                        <span>Meses: {modelo.meses_recomendados.join(", ")}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenDialog(modelo)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openDeleteDialog(modelo.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+      <Tabs defaultValue="modelos" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="modelos">Modelos</TabsTrigger>
+          <TabsTrigger value="tipos">Tipos de Atividade</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="modelos">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Modelos de Estágio</CardTitle>
+                  <CardDescription>
+                    Gerencie os templates de estágios (Gastro/Pneumo, Neonatologia, DIP/PS, etc.)
+                  </CardDescription>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <Button onClick={() => handleOpenDialog()}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Novo Modelo
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {modelos.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>Nenhum modelo cadastrado ainda.</p>
+                  <p className="text-sm mt-2">Clique em "Novo Modelo" para começar.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {modelos.map((modelo) => (
+                    <div
+                      key={modelo.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setModeloSelecionado(modelo.id);
+                        // Switch to tipos tab when clicking a modelo
+                        const tiposTab = document.querySelector('[value="tipos"]') as HTMLElement;
+                        tiposTab?.click();
+                      }}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-semibold text-lg">{modelo.nome}</h3>
+                          {!modelo.ativo && (
+                            <span className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded">
+                              Inativo
+                            </span>
+                          )}
+                        </div>
+                        {modelo.descricao && (
+                          <p className="text-sm text-muted-foreground mt-1">{modelo.descricao}</p>
+                        )}
+                        <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                          <span>Subgrupos: {modelo.num_subgrupos}</span>
+                          <span>Rotação: {modelo.tem_rotacao ? "Sim" : "Não"}</span>
+                          {modelo.meses_recomendados && (
+                            <span>Meses: {modelo.meses_recomendados.join(", ")}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenDialog(modelo)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDeleteDialog(modelo.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tipos">
+          <TiposAtividadeManager 
+            modelos={modelos} 
+            modeloInicial={modeloSelecionado}
+            onModeloChange={setModeloSelecionado}
+          />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

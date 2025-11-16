@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Loader2, Clock } from "lucide-react";
@@ -45,17 +46,38 @@ interface TipoAtividade {
   quota_maxima: number | null;
   permite_fim_semana: boolean;
   permite_feriado: boolean;
+  permite_dias_uteis: boolean;
+  dias_semana: number[];
   horario_inicio: string | null;
   horario_fim: string | null;
   cor_dashboard: string | null;
   ordem_exibicao: number;
 }
 
-export function TiposAtividadeManager() {
-  const [modelos, setModelos] = useState<ModeloEstagio[]>([]);
-  const [modeloSelecionado, setModeloSelecionado] = useState<string>("");
+interface TiposAtividadeManagerProps {
+  modelos: ModeloEstagio[];
+  modeloInicial?: string;
+  onModeloChange?: (modeloId: string) => void;
+}
+
+const DIAS_SEMANA = [
+  { valor: 0, nome: "Domingo" },
+  { valor: 1, nome: "Segunda" },
+  { valor: 2, nome: "Terça" },
+  { valor: 3, nome: "Quarta" },
+  { valor: 4, nome: "Quinta" },
+  { valor: 5, nome: "Sexta" },
+  { valor: 6, nome: "Sábado" },
+];
+
+export function TiposAtividadeManager({ 
+  modelos, 
+  modeloInicial = "", 
+  onModeloChange 
+}: TiposAtividadeManagerProps) {
+  const [modeloSelecionado, setModeloSelecionado] = useState<string>(modeloInicial);
   const [tipos, setTipos] = useState<TipoAtividade[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingTipo, setEditingTipo] = useState<TipoAtividade | null>(null);
@@ -72,6 +94,8 @@ export function TiposAtividadeManager() {
     quota_maxima: "",
     permite_fim_semana: true,
     permite_feriado: true,
+    permite_dias_uteis: true,
+    dias_semana: [0, 1, 2, 3, 4, 5, 6],
     horario_inicio: "",
     horario_fim: "",
     cor_dashboard: "#3b82f6",
@@ -79,37 +103,16 @@ export function TiposAtividadeManager() {
   });
 
   useEffect(() => {
-    fetchModelos();
-  }, []);
+    if (modeloInicial) {
+      setModeloSelecionado(modeloInicial);
+    }
+  }, [modeloInicial]);
 
   useEffect(() => {
     if (modeloSelecionado) {
       fetchTiposAtividade();
     }
   }, [modeloSelecionado]);
-
-  const fetchModelos = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("modelos_estagio")
-        .select("id, nome")
-        .eq("ativo", true)
-        .order("nome");
-
-      if (error) throw error;
-      setModelos(data || []);
-
-      if (data && data.length > 0 && !modeloSelecionado) {
-        setModeloSelecionado(data[0].id);
-      }
-    } catch (error: any) {
-      console.error("Erro ao buscar modelos:", error);
-      toast.error("Erro ao carregar modelos");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchTiposAtividade = async () => {
     if (!modeloSelecionado) return;
@@ -142,6 +145,8 @@ export function TiposAtividadeManager() {
         quota_maxima: tipo.quota_maxima?.toString() || "",
         permite_fim_semana: tipo.permite_fim_semana,
         permite_feriado: tipo.permite_feriado,
+        permite_dias_uteis: tipo.permite_dias_uteis,
+        dias_semana: tipo.dias_semana || [0, 1, 2, 3, 4, 5, 6],
         horario_inicio: tipo.horario_inicio || "",
         horario_fim: tipo.horario_fim || "",
         cor_dashboard: tipo.cor_dashboard || "#3b82f6",
@@ -159,6 +164,8 @@ export function TiposAtividadeManager() {
         quota_maxima: "",
         permite_fim_semana: true,
         permite_feriado: true,
+        permite_dias_uteis: true,
+        dias_semana: [0, 1, 2, 3, 4, 5, 6],
         horario_inicio: "",
         horario_fim: "",
         cor_dashboard: "#3b82f6",
@@ -193,6 +200,8 @@ export function TiposAtividadeManager() {
         quota_maxima: formData.quota_maxima ? parseInt(formData.quota_maxima) : null,
         permite_fim_semana: formData.permite_fim_semana,
         permite_feriado: formData.permite_feriado,
+        permite_dias_uteis: formData.permite_dias_uteis,
+        dias_semana: formData.dias_semana,
         horario_inicio: formData.horario_inicio || null,
         horario_fim: formData.horario_fim || null,
         cor_dashboard: formData.cor_dashboard,
@@ -535,6 +544,51 @@ export function TiposAtividadeManager() {
                   onCheckedChange={(checked) => setFormData({ ...formData, permite_feriado: checked })}
                 />
               </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <Label htmlFor="dias_uteis">Permite Dias Úteis</Label>
+              <Switch
+                id="dias_uteis"
+                checked={formData.permite_dias_uteis}
+                onCheckedChange={(checked) => setFormData({ ...formData, permite_dias_uteis: checked })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Dias da Semana Permitidos</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 border rounded-lg">
+                {DIAS_SEMANA.map((dia) => (
+                  <div key={dia.valor} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`dia-${dia.valor}`}
+                      checked={formData.dias_semana.includes(dia.valor)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData({
+                            ...formData,
+                            dias_semana: [...formData.dias_semana, dia.valor].sort()
+                          });
+                        } else {
+                          setFormData({
+                            ...formData,
+                            dias_semana: formData.dias_semana.filter(d => d !== dia.valor)
+                          });
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`dia-${dia.valor}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {dia.nome}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Selecione os dias da semana em que esta atividade pode ser realizada
+              </p>
             </div>
           </div>
 
