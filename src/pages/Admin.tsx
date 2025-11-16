@@ -5,18 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { LogOut, ArrowLeft } from "lucide-react";
-import { ScaleForm } from "@/components/admin/ScaleForm";
-import { BulkActivityImport } from "@/components/admin/BulkActivityImport";
-import { ActivityList } from "@/components/admin/ActivityList";
-import { RoundManager } from "@/components/admin/RoundManager";
-import { RulesConfig } from "@/components/admin/RulesConfig";
-import { ScaleView } from "@/components/admin/ScaleView";
 import { EmailsAutorizados } from "@/components/admin/EmailsAutorizados";
 import { ParticipantesAtivos } from "@/components/admin/ParticipantesAtivos";
-import { HistoricoEscalas } from "@/components/admin/HistoricoEscalas";
 import { ModelosManager } from "@/components/admin/ModelosManager";
 import { TiposAtividadeManager } from "@/components/admin/TiposAtividadeManager";
 import { SubgruposConfigurator } from "@/components/admin/SubgruposConfigurator";
+import { EscalaManual } from "@/components/admin/EscalaManual";
 
 const Admin = () => {
   const [loading, setLoading] = useState(true);
@@ -122,18 +116,13 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <Tabs defaultValue="escalas" className="space-y-4 sm:space-y-6">
+        <Tabs defaultValue="modelos" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-11">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-6">
               <TabsTrigger value="modelos" className="text-xs sm:text-sm whitespace-nowrap">Modelos</TabsTrigger>
               <TabsTrigger value="tipos" className="text-xs sm:text-sm whitespace-nowrap">Tipos Ativ.</TabsTrigger>
               <TabsTrigger value="subgrupos" className="text-xs sm:text-sm whitespace-nowrap">Subgrupos</TabsTrigger>
-              <TabsTrigger value="escalas" className="text-xs sm:text-sm whitespace-nowrap">Escalas</TabsTrigger>
-              <TabsTrigger value="atividades" className="text-xs sm:text-sm whitespace-nowrap">Atividades</TabsTrigger>
-              <TabsTrigger value="rodadas" className="text-xs sm:text-sm whitespace-nowrap">Rodadas</TabsTrigger>
-              <TabsTrigger value="regras" className="text-xs sm:text-sm whitespace-nowrap">Regras</TabsTrigger>
-              <TabsTrigger value="visualizar" className="text-xs sm:text-sm whitespace-nowrap">Visualizar</TabsTrigger>
-              <TabsTrigger value="historico" className="text-xs sm:text-sm whitespace-nowrap">Histórico</TabsTrigger>
+              <TabsTrigger value="manual" className="text-xs sm:text-sm whitespace-nowrap">Escala Manual</TabsTrigger>
               <TabsTrigger value="participantes" className="text-xs sm:text-sm whitespace-nowrap">Participantes</TabsTrigger>
               <TabsTrigger value="emails" className="text-xs sm:text-sm whitespace-nowrap">Emails</TabsTrigger>
             </TabsList>
@@ -151,31 +140,8 @@ const Admin = () => {
             <SubgruposConfigurator />
           </TabsContent>
 
-          <TabsContent value="escalas" key={`escalas-${refreshKey}`}>
-            <ScaleForm onSuccess={handleRefresh} />
-          </TabsContent>
-
-          <TabsContent value="atividades" key={`atividades-${refreshKey}`}>
-            <div className="space-y-6">
-              <BulkActivityImport onSuccess={handleRefresh} />
-              <ActivityList refreshKey={refreshKey} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="rodadas" key={`rodadas-${refreshKey}`}>
-            <RoundManager />
-          </TabsContent>
-
-          <TabsContent value="regras" key={`regras-${refreshKey}`}>
-            <RulesConfig />
-          </TabsContent>
-
-          <TabsContent value="visualizar" key={`visualizar-${refreshKey}`}>
-            <ScaleView />
-          </TabsContent>
-
-          <TabsContent value="historico" key={`historico-${refreshKey}`}>
-            <HistoricoEscalas />
+          <TabsContent value="manual" key={`manual-${refreshKey}`}>
+            <EscalaManual />
           </TabsContent>
 
           <TabsContent value="participantes" key={`participantes-${refreshKey}`}>
