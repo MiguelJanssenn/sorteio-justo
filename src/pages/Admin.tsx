@@ -30,32 +30,53 @@ const Admin = () => {
   }, []);
 
   const checkAdminAccess = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
 
-    const { data: rolesData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id);
+      const { data: rolesData, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id);
 
-    const hasAdminRole = rolesData?.some(r => r.role === "admin");
-    
-    if (!hasAdminRole) {
+      if (error) {
+        console.error("Erro ao verificar roles:", error);
+        toast({
+          title: "Erro ao verificar permissões",
+          description: error.message,
+          variant: "destructive",
+        });
+        navigate("/");
+        return;
+      }
+
+      const hasAdminRole = rolesData?.some(r => r.role === "admin");
+      
+      if (!hasAdminRole) {
+        toast({
+          title: "Acesso negado",
+          description: "Você não tem permissão para acessar esta área.",
+          variant: "destructive",
+        });
+        navigate("/");
+        return;
+      }
+
+      setIsAdmin(true);
+      setLoading(false);
+    } catch (error: any) {
+      console.error("Erro na verificação de admin:", error);
       toast({
-        title: "Acesso negado",
-        description: "Você não tem permissão para acessar esta área.",
+        title: "Erro ao carregar painel",
+        description: error.message,
         variant: "destructive",
       });
       navigate("/");
-      return;
     }
-
-    setIsAdmin(true);
-    setLoading(false);
   };
 
   const handleLogout = async () => {

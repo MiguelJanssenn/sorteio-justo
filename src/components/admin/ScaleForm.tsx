@@ -62,7 +62,7 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
         nome,
         periodo_inicio: periodoInicio,
         periodo_fim: periodoFim,
-        modelo_id: modeloId || null,
+        modelo_id: (modeloId === "none" || !modeloId) ? null : modeloId,
         created_by: user.id,
         status: "ativa"
       });
@@ -112,7 +112,7 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
           nome: editingEscala.nome,
           periodo_inicio: editingEscala.periodo_inicio,
           periodo_fim: editingEscala.periodo_fim,
-          modelo_id: editingEscala.modelo_id || null,
+          modelo_id: (editingEscala.modelo_id === "none" || !editingEscala.modelo_id) ? null : editingEscala.modelo_id,
           status: editingEscala.status,
         })
         .eq("id", editingEscala.id);
@@ -209,12 +209,12 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
           </div>
           <div>
             <Label htmlFor="modelo">Modelo de Estágio</Label>
-            <Select value={modeloId} onValueChange={setModeloId}>
+            <Select value={modeloId || "none"} onValueChange={(value) => setModeloId(value === "none" ? "" : value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o modelo (opcional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sem modelo</SelectItem>
+                <SelectItem value="none">Sem modelo</SelectItem>
                 {modelos.map(modelo => (
                   <SelectItem key={modelo.id} value={modelo.id}>
                     {modelo.nome}
@@ -362,14 +362,14 @@ export const ScaleForm = ({ onSuccess }: { onSuccess: () => void }) => {
             <div>
               <Label htmlFor="edit-modelo">Modelo de Estágio</Label>
               <Select 
-                value={editingEscala.modelo_id || ""} 
-                onValueChange={(value) => setEditingEscala({ ...editingEscala, modelo_id: value })}
+                value={editingEscala.modelo_id || "none"} 
+                onValueChange={(value) => setEditingEscala({ ...editingEscala, modelo_id: value === "none" ? "" : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o modelo (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sem modelo</SelectItem>
+                  <SelectItem value="none">Sem modelo</SelectItem>
                   {modelos.map(modelo => (
                     <SelectItem key={modelo.id} value={modelo.id}>
                       {modelo.nome}
